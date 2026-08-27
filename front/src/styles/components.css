@@ -1,0 +1,994 @@
+/* ===== Layout genérico =====
+   Mobile-first: una sola columna, contenido a ancho completo con padding
+   lateral. A partir de notebook (~600px) el contenedor principal adopta un
+   max-width fijo y queda centrado con espacio a los costados; en monitores
+   grandes (1200px+) ese max-width crece un poco pero nunca se estira al
+   100% del viewport (ver front.md sección 6). */
+.page {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  gap: 1.5rem;
+  overflow-x: hidden;
+}
+
+.page-narrow {
+  width: 100%;
+  max-width: 32rem;
+}
+
+.page-wide {
+  width: 100%;
+  max-width: 46rem;
+}
+
+@media (min-width: 600px) {
+  .page {
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .page-wide {
+    max-width: 60rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .page-wide {
+    max-width: 72rem;
+  }
+}
+
+/* ===== Gabinete de arcade: elemento de firma del diseño =====
+   Bezel superior con dos "tornillos" decorativos + borde grueso recto. */
+.cabinet {
+  position: relative;
+  width: 100%;
+  background: var(--color-panel);
+  border: var(--border-width) solid var(--color-border);
+  box-shadow: var(--shadow-hard);
+  padding: 1.75rem 1.5rem 1.5rem;
+}
+
+.cabinet-bezel {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  height: 10px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-magenta) 0 10px,
+    var(--color-cyan) 10px 20px,
+    var(--color-yellow) 20px 30px,
+    var(--color-violet) 30px 40px
+  );
+  border-bottom: var(--border-width-thin) solid var(--color-bg);
+}
+
+.cabinet-title {
+  font-size: 1.1rem;
+  color: var(--color-magenta);
+  margin: 0.5rem 0 0.25rem;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
+.cabinet-subtitle {
+  font-family: var(--font-body);
+  color: var(--color-text-dim);
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.cabinet-total {
+  font-family: var(--font-body);
+  color: var(--color-text-dim);
+  text-align: center;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+
+.cabinet-total strong {
+  color: var(--color-cyan);
+}
+
+/* ===== Título de la app ===== */
+.brand-title {
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  color: var(--color-yellow);
+  text-shadow: 4px 4px 0 var(--color-magenta);
+  text-align: center;
+  margin: 0;
+}
+
+.brand-tagline {
+  color: var(--color-text-dim);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* ===== Botones ===== */
+.btn {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border: var(--border-width-thin) solid var(--color-bg);
+  background: var(--color-text);
+  color: var(--color-bg);
+  box-shadow: var(--shadow-hard-sm);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.5);
+}
+
+.btn:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-magenta);
+  color: var(--color-bg);
+}
+
+.btn-secondary {
+  background: var(--color-cyan);
+  color: var(--color-bg);
+}
+
+.btn-host {
+  background: var(--color-violet);
+  color: var(--color-text);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* ===== Formularios ===== */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+  position: relative;
+}
+
+.field label {
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+  font-weight: 600;
+}
+
+.field input[type="text"],
+.field input[type="number"] {
+  background: var(--color-bg-alt);
+  border: var(--border-width-thin) solid var(--color-border);
+  color: var(--color-text);
+  padding: 0.7rem 0.8rem;
+  font-size: 1rem;
+}
+
+.field input:focus {
+  border-color: var(--color-cyan);
+}
+
+.field-error {
+  color: var(--color-red);
+  font-size: 0.85rem;
+}
+
+.field-help {
+  color: var(--color-text-faint);
+  font-size: 0.78rem;
+}
+
+/* Tooltip de PhaseDurationInput */
+.tooltip-wrapper {
+  position: relative;
+}
+
+.tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: var(--border-width-thin) solid var(--color-yellow);
+  color: var(--color-yellow);
+  font-size: 0.7rem;
+  font-family: var(--font-display);
+  background: transparent;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.tooltip-bubble {
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 16rem;
+  max-width: 70vw;
+  background: var(--color-bg-alt);
+  border: var(--border-width-thin) solid var(--color-yellow);
+  color: var(--color-text);
+  padding: 0.6rem 0.7rem;
+  font-size: 0.78rem;
+  box-shadow: var(--shadow-hard-sm);
+}
+
+/* ===== Timer / marcador de puntaje ===== */
+.timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #05030a;
+  border: var(--border-width-thin) solid var(--color-border);
+  padding: 0.6rem 1rem;
+}
+
+.timer-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--color-yellow);
+  text-shadow: 0 0 8px rgba(255, 201, 71, 0.6);
+}
+
+.timer-value[data-status="paused"] {
+  color: var(--color-text-faint);
+  text-shadow: none;
+}
+
+.timer-value[data-status="finished"] {
+  color: var(--color-red);
+  text-shadow: 0 0 8px rgba(255, 70, 85, 0.6);
+}
+
+.timer-label {
+  font-size: 0.65rem;
+  color: var(--color-text-faint);
+  font-family: var(--font-display);
+}
+
+/* ===== Sala / participantes ===== */
+.room-code {
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  letter-spacing: 0.15em;
+  color: var(--color-cyan);
+  background: var(--color-bg-alt);
+  border: var(--border-width-thin) dashed var(--color-cyan);
+  padding: 0.75rem 1.25rem;
+  text-align: center;
+}
+
+.participant-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--color-bg-alt);
+  border-left: 4px solid var(--color-cyan);
+  padding: 0.5rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.participant-item span:first-of-type {
+  flex: 1;
+}
+
+.participant-avatar {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.participant-item[data-connected="false"] {
+  border-left-color: var(--color-text-faint);
+  opacity: 0.55;
+}
+
+.participant-badge {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  color: var(--color-violet);
+}
+
+/* ===== Cards / columnas =====
+   Mobile: una sola columna apilada verticalmente (sin scroll horizontal).
+   Notebook+: grid horizontal de 2-3 columnas según cuánto entre. */
+.card-columns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .card-columns {
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+}
+
+.card-column {
+  background: var(--color-bg-alt);
+  border: var(--border-width-thin) solid var(--color-border);
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.card-column-title {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  color: var(--color-orange);
+}
+
+/* Acento de color propio por columna (Keep/Improve/Try) — mismos tres colores
+   se reflejan en el borde izquierdo de sus tarjetas más abajo. */
+.card-column[data-column="keep"] .card-column-title {
+  color: var(--color-cyan);
+}
+
+.card-column[data-column="improve"] .card-column-title {
+  color: var(--color-magenta);
+}
+
+.card-column[data-column="try"] .card-column-title {
+  color: var(--color-yellow);
+}
+
+.card-column-prompt {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+  margin: 0.3rem 0 0.8rem;
+}
+
+.card-item {
+  position: relative;
+  background: var(--color-panel-raised);
+  border-left: 4px solid var(--color-magenta);
+  padding: 0.6rem 0.7rem;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card-column[data-column="keep"] .card-item {
+  border-left-color: var(--color-cyan);
+}
+
+.card-column[data-column="improve"] .card-item {
+  border-left-color: var(--color-magenta);
+}
+
+.card-column[data-column="try"] .card-item {
+  border-left-color: var(--color-yellow);
+}
+
+.card-item-editing {
+  border-left-color: var(--color-cyan);
+}
+
+.card-item-actions {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.card-item-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-faint);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+}
+
+.card-item-action-btn:hover {
+  color: var(--color-cyan);
+}
+
+.card-item-text {
+  word-break: break-word;
+}
+
+.card-item-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  color: var(--color-yellow);
+  word-break: break-word;
+}
+
+.card-item-assignees {
+  font-size: 0.78rem;
+  color: var(--color-cyan);
+}
+
+.card-item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-faint);
+}
+
+.vote-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: var(--border-width-thin) solid var(--color-yellow);
+  color: var(--color-yellow);
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.vote-btn:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+.vote-btn[data-voted="true"] {
+  background: var(--color-yellow);
+  color: var(--color-bg);
+}
+
+.vote-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.votes-remaining {
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+}
+
+.votes-remaining strong {
+  color: var(--color-yellow);
+}
+
+/* ===== Header de estrellas disponibles (HU-F08b) ===== */
+.stars-header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+  text-align: center;
+}
+
+.stars-header-label {
+  font-size: 0.78rem;
+  color: var(--color-text-faint);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stars-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.stars-header-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--color-yellow);
+  text-shadow: 0 0 8px rgba(255, 201, 71, 0.5);
+  transition: transform 0.25s ease, opacity 0.25s ease, color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.stars-header-icon[data-used="true"] {
+  color: var(--color-text-faint);
+  text-shadow: none;
+  opacity: 0.4;
+  transform: scale(0.85);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===== Estrella voladora: transferencia visual header -> tarjeta ===== */
+.flying-star {
+  position: fixed;
+  z-index: 100;
+  font-size: 1.4rem;
+  color: var(--color-yellow);
+  text-shadow: 0 0 10px rgba(255, 201, 71, 0.8);
+  pointer-events: none;
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  transform: translate(0, 0);
+}
+
+/* ===== Slider de estrellas (crear sala, HU-F01c) ===== */
+.stars-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.stars-slider {
+  flex: 1;
+  accent-color: var(--color-magenta);
+  height: 1.5rem;
+}
+
+.stars-slider-value {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--color-yellow);
+  min-width: 1.6rem;
+  text-align: center;
+}
+
+/* ===== Banner de conexión ===== */
+.connection-banner {
+  width: 100%;
+  text-align: center;
+  padding: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: var(--border-width-thin) solid transparent;
+}
+
+.connection-banner[data-status="connecting"] {
+  background: var(--color-bg-alt);
+  color: var(--color-yellow);
+  border-color: var(--color-yellow);
+}
+
+.connection-banner[data-status="disconnected"] {
+  background: var(--color-bg-alt);
+  color: var(--color-red);
+  border-color: var(--color-red);
+}
+
+.connection-banner[data-status="server_full"] {
+  background: var(--color-bg-alt);
+  color: var(--color-orange);
+  border-color: var(--color-orange);
+}
+
+.connection-banner[data-status="connected"] {
+  display: none;
+}
+
+/* ===== Errores ===== */
+.error-banner {
+  width: 100%;
+  background: var(--color-bg-alt);
+  border: var(--border-width-thin) solid var(--color-red);
+  color: var(--color-red);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+/* ===== Landing ===== */
+.landing-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* ===== Host controls ===== */
+.host-controls {
+  border-top: var(--border-width-thin) dashed var(--color-violet);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.host-controls-title {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  color: var(--color-violet);
+}
+
+/* ===== Step indicator (crear sala) ===== */
+.step-indicator {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.step-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  background: var(--color-border);
+}
+
+.step-dot[data-active="true"] {
+  background: var(--color-magenta);
+}
+
+/* ===== Selector de personaje (avatar) ===== */
+.avatar-picker-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-text-dim);
+  margin-bottom: 0.5rem;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.avatar-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  background: var(--color-bg-alt);
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.avatar-option img {
+  image-rendering: pixelated;
+  transition: transform 0.15s ease;
+}
+
+.avatar-option:hover {
+  border-color: var(--color-cyan);
+}
+
+.avatar-option:hover img {
+  transform: translateY(-2px);
+}
+
+.avatar-option[data-selected="true"] {
+  border-color: var(--color-magenta);
+  background: var(--color-bg);
+  animation: avatar-pop 0.25s ease;
+}
+
+@keyframes avatar-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+.avatar-option[data-selected="true"] img {
+  transform: scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-option,
+  .avatar-option img {
+    transition: none;
+  }
+  .avatar-option[data-selected="true"] {
+    animation: none;
+    transform: scale(1.05);
+  }
+  .avatar-option:hover img {
+    transform: none;
+  }
+}
+
+/* ===== Turno de jugador (Nivel 4) — lista de oradores ===== */
+.speaker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.speaker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--color-bg-alt);
+  border-left: 4px solid var(--color-cyan);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  width: 100%;
+  text-align: left;
+}
+
+.speaker-item-button {
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  color: var(--color-text);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.speaker-item[data-connected="false"] {
+  opacity: 0.5;
+}
+
+.speaker-item[data-speaking="true"] {
+  border-left-color: var(--color-yellow);
+  background: var(--color-panel-raised);
+  box-shadow: 0 0 0 2px var(--color-yellow) inset;
+}
+
+.speaker-item-name {
+  flex: 1;
+}
+
+.speaker-item-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.speaker-item-timer {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  color: var(--color-yellow);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Alarma de fin de timer (fases normales) ===== */
+.timer-finished-banner {
+  text-align: center;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: var(--color-bg-alt);
+  border: var(--border-width) solid var(--color-red);
+}
+
+.timer-finished-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--color-red);
+  margin: 0 0 0.8rem;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Aviso de rotación del Nivel 4 (últimos 5 segundos) ===== */
+.speaker-rotation-warning {
+  text-align: center;
+  padding: 1rem;
+  margin: 1rem 0;
+  background: var(--color-bg-alt);
+  border: var(--border-width) solid var(--color-yellow);
+}
+
+.speaker-rotation-countdown {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--color-yellow);
+  margin: 0;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.4);
+}
+
+.speaker-rotation-next {
+  font-family: var(--font-body);
+  color: var(--color-text-dim);
+  margin: 0.4rem 0 0;
+}
+
+/* ===== Salón de la Fama (Nivel 6) — ranking de solo lectura ===== */
+.hall-of-fame {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  width: 100%;
+}
+
+.hof-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: var(--color-panel-raised);
+  border-left: 4px solid var(--color-magenta);
+  padding: 0.7rem 0.9rem;
+}
+
+.hof-item[data-rank="1"] {
+  border-left-color: var(--color-yellow);
+  box-shadow: 0 0 0 2px var(--color-yellow) inset;
+}
+
+.hof-item[data-rank="2"] {
+  border-left-color: var(--color-cyan);
+}
+
+.hof-rank {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--color-yellow);
+  flex-shrink: 0;
+  width: 2.4rem;
+  text-align: center;
+}
+
+.hof-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* ===== Formulario de plan de acción (Nivel 7 / Game Over) ===== */
+.action-plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+/* Título, descripción y responsables en una misma fila en pantallas anchas;
+   se apila en columna en mobile según la regla de layout responsivo. */
+.action-plan-form-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.action-plan-field-title {
+  flex: 2 1 12rem;
+}
+
+.action-plan-field-description {
+  flex: 3 1 14rem;
+}
+
+.action-plan-field-submit {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+}
+
+.action-plan-field-submit .btn {
+  width: 100%;
+  white-space: nowrap;
+}
+
+/* Ocupa exactamente el mismo alto que un <label> real (misma fuente/línea) para
+   que el botón quede a la misma altura que los inputs de los campos vecinos. */
+.action-plan-submit-spacer {
+  display: block;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  visibility: hidden;
+}
+
+@media (max-width: 640px) {
+  .action-plan-form-row {
+    flex-direction: column;
+  }
+
+  .action-plan-field-submit {
+    width: 100%;
+  }
+}
+
+.assignee-select-field {
+  position: relative;
+  flex: 2 1 10rem;
+}
+
+.assignee-select-toggle {
+  width: 100%;
+  background: var(--color-bg-alt);
+  border: var(--border-width-thin) solid var(--color-border);
+  color: var(--color-text);
+  padding: 0.7rem 0.8rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.assignee-select-toggle:hover,
+.assignee-select-toggle:focus {
+  border-color: var(--color-cyan);
+}
+
+.assignee-dropdown {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 10rem;
+  overflow-y: auto;
+  background: var(--color-bg-alt);
+  border: var(--border-width-thin) solid var(--color-cyan);
+  padding: 0.6rem 0.7rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.assignee-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.assignee-option-all {
+  padding-bottom: 0.4rem;
+  border-bottom: var(--border-width-thin) dashed var(--color-border);
+  color: var(--color-cyan);
+}
+
+.assignee-option input[type="checkbox"] {
+  accent-color: var(--color-magenta);
+  width: 1.1rem;
+  height: 1.1rem;
+}
