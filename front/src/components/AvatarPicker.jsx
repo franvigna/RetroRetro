@@ -1,9 +1,13 @@
 import { AVATARS } from "../domain/avatars.js";
 
+// Si todavía no hay ningún avatar cargado (ver avatars.js) no mostramos una
+// sección "Elegí un personaje" vacía y rota — directamente no renderiza nada.
 export function AvatarPicker({ value, onChange }) {
   function handleClick(avatarId) {
     onChange(value === avatarId ? null : avatarId);
   }
+
+  if (AVATARS.length === 0) return null;
 
   return (
     <div className="field">

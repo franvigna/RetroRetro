@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { CardColumn } from "./CardColumn.jsx";
+import { COLUMN_PROMPTS } from "../domain/phaseThemes.js";
 
 const participantsById = { p1: { id: "p1", name: "Ana" } };
 
@@ -85,7 +86,7 @@ describe("CardColumn — formulario de agregar tarjeta", () => {
     expect(screen.getByRole("button", { name: /Dar tu estrella/ })).toBeInTheDocument();
   });
 
-  it("muestra la pregunta disparadora correspondiente a cada columna keep/improve/try", () => {
+  it("muestra al menos 2 preguntas disparadoras por columna keep/improve/try", () => {
     const { rerender } = render(
       <CardColumn
         column="keep"
@@ -99,7 +100,10 @@ describe("CardColumn — formulario de agregar tarjeta", () => {
         onVote={() => {}}
       />
     );
-    expect(screen.getByText("¿Qué funcionó y hay que mantener?")).toBeInTheDocument();
+    expect(COLUMN_PROMPTS.keep.length).toBeGreaterThanOrEqual(2);
+    for (const prompt of COLUMN_PROMPTS.keep) {
+      expect(screen.getByText(prompt)).toBeInTheDocument();
+    }
 
     rerender(
       <CardColumn
@@ -114,7 +118,10 @@ describe("CardColumn — formulario de agregar tarjeta", () => {
         onVote={() => {}}
       />
     );
-    expect(screen.getByText("¿Qué se puede mejorar?")).toBeInTheDocument();
+    expect(COLUMN_PROMPTS.improve.length).toBeGreaterThanOrEqual(2);
+    for (const prompt of COLUMN_PROMPTS.improve) {
+      expect(screen.getByText(prompt)).toBeInTheDocument();
+    }
   });
 
   it("no muestra pregunta disparadora en la columna action_plan", () => {

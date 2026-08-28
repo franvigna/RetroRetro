@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { createMockSocket } from "../test/mockSocket.js";
 
@@ -74,14 +74,27 @@ describe("JoinRoomPage — flujo en dos pasos", () => {
     renderPage();
     goToNameStep("retro-ab12");
     fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
-    fireEvent.click(screen.getByLabelText("Gorra roja"));
+    fireEvent.click(screen.getByLabelText("Cisco"));
     fireEvent.click(screen.getByText(/Entrar/));
 
     expect(mockSocket.emit).toHaveBeenCalledWith("room:join", {
       code: "RETRO-AB12",
       name: "Ana",
-      avatarId: "gorra-roja-pecoso",
+      avatarId: "cisco",
     });
+  });
+
+  it("room:join_locked muestra el aviso de partida ya empezada en el paso 2", () => {
+    renderPage();
+    goToNameStep("retro-ab12");
+    fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
+    fireEvent.click(screen.getByText(/Entrar/));
+
+    act(() => {
+      mockSocket.trigger("room:join_locked", { code: "RETRO-AB12" });
+    });
+
+    expect(screen.getByText(/ya empezó/)).toBeInTheDocument();
   });
 
   it("permite volver del paso 2 al paso 1 con Atrás", () => {

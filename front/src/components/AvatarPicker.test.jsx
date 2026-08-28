@@ -29,3 +29,14 @@ describe("AvatarPicker", () => {
     expect(screen.getByLabelText(AVATARS[0].label)).toHaveAttribute("aria-pressed", "false");
   });
 });
+
+describe("AvatarPicker — sin avatares cargados", () => {
+  it("no renderiza nada si AVATARS está vacío", async () => {
+    vi.resetModules();
+    vi.doMock("../domain/avatars.js", () => ({ AVATARS: [] }));
+    const { AvatarPicker: AvatarPickerEmpty } = await import("./AvatarPicker.jsx");
+    const { container } = render(<AvatarPickerEmpty value={null} onChange={() => {}} />);
+    expect(container).toBeEmptyDOMElement();
+    vi.doUnmock("../domain/avatars.js");
+  });
+});

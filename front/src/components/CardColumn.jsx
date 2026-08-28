@@ -38,7 +38,13 @@ export function CardColumn({
   return (
     <div className="card-column" data-column={column}>
       <h3 className="card-column-title">{COLUMN_LABELS[column] || column}</h3>
-      {COLUMN_PROMPTS[column] && <p className="card-column-prompt">{COLUMN_PROMPTS[column]}</p>}
+      {COLUMN_PROMPTS[column] && (
+        <ul className="card-column-prompts">
+          {COLUMN_PROMPTS[column].map((prompt) => (
+            <li key={prompt}>{prompt}</li>
+          ))}
+        </ul>
+      )}
 
       {canAddCard && isActionPlan && (
         <ActionPlanForm

@@ -219,14 +219,16 @@ describe("integración de socket", () => {
     expect(unvotedState.room.cards[0].votes).not.toContain(participant.id);
   });
 
-  it("E2E-B07: un cliente reconecta con el mismo code y nombre dentro de la ventana de gracia y conserva su voto", async () => {
+  it("E2E-B07: un cliente reconecta con su sessionToken dentro de la ventana de gracia y conserva su voto", async () => {
     const host = connectClient();
     host.emit("room:create", { hostName: "Cisco" });
     const { code } = await waitFor(host, "room:created");
 
     const participant = connectClient();
+    const joinedPromise = waitFor(participant, "room:joined");
     participant.emit("room:join", { code, name: "Ana" });
-    await waitFor(participant, "room:state");
+    const [, participantJoined] = await Promise.all([waitFor(participant, "room:state"), joinedPromise]);
+    const participantToken = participantJoined.sessionToken;
 
     host.emit("phase:start_session");
     await waitFor(host, "room:state");
@@ -257,7 +259,9 @@ describe("integración de socket", () => {
     const reconnected = connectClient();
     const reconnectStatePromise = waitFor(reconnected, "room:state");
     const reconnectJoinedPromise = waitFor(reconnected, "room:joined");
-    reconnected.emit("room:join", { code, name: "Ana" });
+    // El nombre que se manda acá es irrelevante para la reconexión: lo que
+    // autentica es el sessionToken (ver room:join en roomHandlers.js).
+    reconnected.emit("room:join", { code, name: "Ana", sessionToken: participantToken });
     const [reconnectedState, joinedPayload] = await Promise.all([reconnectStatePromise, reconnectJoinedPromise]);
 
     // room:joined es la única forma confiable de que el cliente sepa su propia
@@ -265,6 +269,7 @@ describe("integración de socket", () => {
     // del participantId reasignado (el id histórico de Ana, dueño del voto).
     expect(joinedPayload.participantId).toBe(originalParticipantId);
     expect(reconnected.id).not.toBe(originalParticipantId);
+    expect(joinedPayload.sessionToken).toBe(participantToken);
 
     const card = reconnectedState.room.cards.find((c) => c.id === cardId);
     expect(card.votes).toHaveLength(1);
@@ -272,6 +277,111 @@ describe("integración de socket", () => {
     expect(reconnectedParticipant.connected).toBe(true);
     expect(card.votes[0]).toBe(reconnectedParticipant.id);
     expect(card.votes[0]).toBe(joinedPayload.participantId);
+  });
+
+  it("HU-B02b: escribir el nombre exacto del host desconectado, sin su sessionToken, NO da control de host", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco" });
+    const { code, room: createdRoom } = await waitFor(host, "room:created");
+    const hostId = createdRoom.hostId;
+
+    host.disconnect();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const impostor = connectClient();
+    const joinedPromise = waitFor(impostor, "room:joined");
+    const statePromise = waitFor(impostor, "room:state");
+    impostor.emit("room:join", { code, name: "Cisco" }); // mismo nombre, sin token
+    const [joined, state] = await Promise.all([joinedPromise, statePromise]);
+
+    // Entra como alguien nuevo, no como el host: id distinto, y ningún
+    // participante nuevo tiene role "host" (sigue siendo el original).
+    expect(joined.participantId).not.toBe(hostId);
+    const impostorParticipant = state.room.participants.find((p) => p.id === joined.participantId);
+    expect(impostorParticipant.role).toBe("participant");
+    expect(state.room.hostId).toBe(hostId);
+
+    // Un no-host (el impostor) sigue sin poder avanzar de fase.
+    const unauthorizedPromise = waitFor(impostor, "error:unauthorized");
+    impostor.emit("phase:advance");
+    const error = await unauthorizedPromise;
+    expect(error.action).toBe("phase:advance");
+  });
+
+  it("escribir el nombre exacto de un participante desconectado, sin su sessionToken, crea a alguien nuevo (no le roba el lugar)", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco" });
+    const { code } = await waitFor(host, "room:created");
+
+    const participant = connectClient();
+    participant.emit("room:join", { code, name: "Ana" });
+    await waitFor(participant, "room:state");
+    const originalAnaId = participant.id;
+
+    participant.disconnect();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const impostor = connectClient();
+    const joinedPromise = waitFor(impostor, "room:joined");
+    const statePromise = waitFor(impostor, "room:state");
+    impostor.emit("room:join", { code, name: "Ana" }); // mismo nombre, sin token
+    const [joined, state] = await Promise.all([joinedPromise, statePromise]);
+
+    expect(joined.participantId).not.toBe(originalAnaId);
+    // Quedan DOS participantes con nombre "Ana": la original (desconectada,
+    // esperando su ventana de gracia) y la nueva.
+    const anas = state.room.participants.filter((p) => p.name === "Ana");
+    expect(anas).toHaveLength(2);
+    expect(anas.find((p) => p.id === originalAnaId).connected).toBe(false);
+    expect(anas.find((p) => p.id === joined.participantId).connected).toBe(true);
+  });
+
+  it("sessionToken nunca viaja en room:state, ni siquiera al dueño — solo en room:created/room:joined", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco" });
+    const { room: createdRoom } = await waitFor(host, "room:created");
+    expect(createdRoom.participants[0]).not.toHaveProperty("sessionToken");
+
+    const participant = connectClient();
+    const hostStatePromise = waitFor(host, "room:state");
+    participant.emit("room:join", { code: createdRoom.code, name: "Ana" });
+    const [hostState, participantState] = await Promise.all([hostStatePromise, waitFor(participant, "room:state")]);
+
+    for (const p of hostState.room.participants) expect(p).not.toHaveProperty("sessionToken");
+    for (const p of participantState.room.participants) expect(p).not.toHaveProperty("sessionToken");
+  });
+
+  it("una vez que la partida arrancó, nadie nuevo (sin sessionToken) puede sumarse — pero sí reconectarse quien ya estaba", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco" });
+    const { code } = await waitFor(host, "room:created");
+
+    const participant = connectClient();
+    const joinedPromise = waitFor(participant, "room:joined");
+    participant.emit("room:join", { code, name: "Ana" });
+    const [, participantJoined] = await Promise.all([waitFor(participant, "room:state"), joinedPromise]);
+    const participantToken = participantJoined.sessionToken;
+
+    host.emit("phase:start_session");
+    await waitFor(host, "room:state");
+
+    // Alguien nuevo, sin haber estado nunca en la sala, no puede sumarse.
+    const newcomer = connectClient();
+    const lockedPromise = waitFor(newcomer, "room:join_locked");
+    newcomer.emit("room:join", { code, name: "Beto" });
+    const locked = await lockedPromise;
+    expect(locked.code).toBe(code);
+
+    // Ana, que ya estaba, se reconecta sin problema con su token aunque la
+    // partida ya haya arrancado (ventana de gracia, HU-B09).
+    participant.disconnect();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const reconnected = connectClient();
+    const reconnectJoinedPromise = waitFor(reconnected, "room:joined");
+    reconnected.emit("room:join", { code, name: "Ana", sessionToken: participantToken });
+    const reconnectJoined = await reconnectJoinedPromise;
+    expect(reconnectJoined.participantId).toBe(participantJoined.participantId);
   });
 
   it("E2E-B08: room:join con código inexistente responde room:not_found sin crear estado nuevo", async () => {

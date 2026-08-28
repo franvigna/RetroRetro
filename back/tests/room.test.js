@@ -4,6 +4,9 @@ import {
   resolveAvatarId,
   resolveSecondsPerSpeaker,
   resolvePreviousActionNotes,
+  generateSessionToken,
+  toPublicRoom,
+  isRoomLockedForNewJoins,
   AVATAR_IDS,
   PREVIOUS_ACTION_NOTES_MAX_LENGTH,
 } from "../src/domain/room.js";
@@ -23,10 +26,23 @@ describe("createRoom", () => {
     expect(room.phase).toBe("waiting_room");
     expect(room.hostId).toBe("socket-1");
     expect(room.participants).toEqual([
-      { id: "socket-1", name: "Cisco", role: "host", connected: true, avatarId: null },
+      {
+        id: "socket-1",
+        name: "Cisco",
+        role: "host",
+        connected: true,
+        avatarId: null,
+        sessionToken: expect.any(String),
+      },
     ]);
     expect(room.cards).toEqual([]);
     expect(room.phaseHistory).toEqual([]);
+  });
+
+  it("le asigna al host un sessionToken distinto en cada sala creada", () => {
+    const roomA = createRoom(baseArgs);
+    const roomB = createRoom({ ...baseArgs, code: "RETRO-9Z2Q" });
+    expect(roomA.participants[0].sessionToken).not.toBe(roomB.participants[0].sessionToken);
   });
 
   it("rechaza hostName vacío", () => {
@@ -168,5 +184,49 @@ describe("resolveAvatarId", () => {
     for (const id of AVATAR_IDS) {
       expect(resolveAvatarId(id)).toBe(id);
     }
+  });
+});
+
+describe("generateSessionToken", () => {
+  it("genera un token distinto en cada llamada", () => {
+    const tokens = new Set(Array.from({ length: 20 }, () => generateSessionToken()));
+    expect(tokens.size).toBe(20);
+  });
+});
+
+describe("toPublicRoom", () => {
+  it("saca el sessionToken de todos los participantes sin tocar el resto de los campos", () => {
+    const room = createRoom(baseArgs);
+    const publicRoom = toPublicRoom(room);
+
+    expect(publicRoom.participants[0]).not.toHaveProperty("sessionToken");
+    expect(publicRoom.participants[0]).toEqual({
+      id: "socket-1",
+      name: "Cisco",
+      role: "host",
+      connected: true,
+      avatarId: null,
+    });
+    // El resto de la sala (fuera de participants) no se toca.
+    expect(publicRoom.code).toBe(room.code);
+    expect(publicRoom.phase).toBe(room.phase);
+  });
+
+  it("no muta el room original", () => {
+    const room = createRoom(baseArgs);
+    toPublicRoom(room);
+    expect(room.participants[0]).toHaveProperty("sessionToken");
+  });
+});
+
+describe("isRoomLockedForNewJoins", () => {
+  it("no está bloqueada en waiting_room", () => {
+    const room = createRoom(baseArgs);
+    expect(isRoomLockedForNewJoins(room)).toBe(false);
+  });
+
+  it("está bloqueada en cualquier otra fase", () => {
+    const room = { ...createRoom(baseArgs), phase: "keep_improve_try" };
+    expect(isRoomLockedForNewJoins(room)).toBe(true);
   });
 });

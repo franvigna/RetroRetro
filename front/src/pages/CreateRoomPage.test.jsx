@@ -98,13 +98,13 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
   it("emite room:create con el avatarId elegido en el paso 1", () => {
     renderPage();
     fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Cisco" } });
-    fireEvent.click(screen.getByLabelText("Gorra roja"));
+    fireEvent.click(screen.getByLabelText("Cisco"));
     goToStarsStep();
     fireEvent.click(screen.getByText(/Crear sala/));
 
     expect(mockSocket.emit).toHaveBeenCalledWith(
       "room:create",
-      expect.objectContaining({ avatarId: "gorra-roja-pecoso" })
+      expect.objectContaining({ avatarId: "cisco" })
     );
   });
 

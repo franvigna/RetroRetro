@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { InvalidActionError } from "./errors.js";
 import { resolvePhaseDurations } from "./phases.js";
 
@@ -16,56 +17,11 @@ const MAX_SECONDS_PER_SPEAKER = 300;
 // manual de darle continuidad sin guardar nada entre salas distintas.
 export const PREVIOUS_ACTION_NOTES_MAX_LENGTH = 2000;
 
-export const AVATAR_IDS = [
-  "afro-pelirrojo-bigote",
-  "pelo-largo-lentes-sol-rojo",
-  "calvo-barba-canosa-anteojos",
-  "rulos-violeta-pecoso",
-  "cinta-deportiva-rubio",
-  "pelo-corto-pecoso-sonriente",
-  "canoso-barba-naranja",
-  "anteojos-marco-negro-morocha",
-  "mohicano-verde-punk",
-  "pelo-corto-oscuro-gorra-lateral",
-  "pelirrojo-flequillo",
-  "rulos-violeta-suave",
-  "trenzas-rubias-cinta",
-  "pelirrojo-pecoso-sonriente",
-  "canoso-anteojos-sonriente",
-  "pelo-negro-lentes-sol-mujer",
-  "afro-magenta-anteojos",
-  "calvo-barba-tatuajes-cuello",
-  "afro-cian-anteojos-rosa",
-  "gorra-roja-pecoso",
-  "canoso-auriculares-sonriente",
-  "rubio-lentes-sol-clasico",
-  "pelo-negro-aros-coloridos",
-  "afro-magenta-sonriente",
-  "calvo-barba-aros-tatuajes",
-  "afro-celeste-anteojos-rosados",
-  "cresta-celeste-goblin",
-  "pelo-rosa-largo-choker",
-  "gorra-violeta-pecoso-sonriente",
-  "cresta-violeta-sonriente",
-  "calvo-barba-collar-tribal",
-  "afro-celeste-anteojos-rosa-oscuro",
-  "pelo-rosa-choker-mujer",
-  "mascara-oscura-ojos-brillantes",
-  "afro-violeta-oscuro",
-  "gorro-celeste-piel-verde",
-  "pelo-castano-aros-coloridos",
-  "orco-verde-anteojos-rosa",
-  "lentes-sol-negro-barba",
-  "anteojos-marco-gris-bigote",
-  "trenzas-largas-sonriente",
-  "pelo-castano-corto-anteojos-mujer",
-  "gorro-lana-canoso-anteojos",
-  "lentes-sol-negro-gorra-atras",
-  "canoso-anteojos-barba-blanca",
-  "lentes-sol-barba-negra",
-  "anteojos-marco-gris-sport",
-  "trenzas-negras-sonriente",
-];
+// Espejo de front/src/domain/avatars.js. Generados con la herramienta
+// interna Avatar Lab (front/src/pages/AvatarLabPage.jsx) a partir de fotos
+// reales del equipo Jaliscom. Al sumar uno nuevo, agregar el mismo id acá y
+// en requirements/shared-contract.md sección 1.
+export const AVATAR_IDS = ["cisco", "licha", "juampy", "mili", "agus", "sergio"];
 
 // avatarId es cosmético y opcional: un valor ausente o inválido nunca rechaza
 // room:create/room:join, simplemente se guarda como null (ver back.md HU-B01b).
@@ -134,7 +90,14 @@ export function createRoom({
     phaseHistory: [],
     timer: { status: "idle", durationSeconds: 0, remainingSeconds: 0 },
     participants: [
-      { id: hostId, name: hostName.trim(), role: "host", connected: true, avatarId: resolveAvatarId(avatarId) },
+      {
+        id: hostId,
+        name: hostName.trim(),
+        role: "host",
+        connected: true,
+        avatarId: resolveAvatarId(avatarId),
+        sessionToken: generateSessionToken(),
+      },
     ],
     cards: [],
     phaseDurations: resolvedDurations,
@@ -145,4 +108,32 @@ export function createRoom({
     previousActionNotes: resolvedPreviousActionNotes,
     createdAt: now,
   };
+}
+
+// Credencial secreta de reconexión de un participante — nunca el nombre
+// tipeado, que cualquiera puede repetir (ver room:join en roomHandlers.js:
+// antes reconectaba por `name === name` sin más chequeo, lo que permitía
+// entrar como cualquiera, incluido el host, con solo escribir su nombre
+// mientras estaba desconectado). Se entrega una sola vez, en privado, al
+// dueño del participante (room:created/room:joined) — jamás en room:state
+// ni en ningún payload que vea el resto de la sala (ver toPublicRoom).
+export function generateSessionToken() {
+  return randomUUID();
+}
+
+// Único punto por el que debe pasar cualquier `room` antes de salir hacia un
+// socket (room:state, room:created, room:joined) — saca el sessionToken de
+// cada participante para que nunca viaje a nadie más que a su dueño.
+export function toPublicRoom(room) {
+  return {
+    ...room,
+    participants: room.participants.map(({ sessionToken, ...publicFields }) => publicFields),
+  };
+}
+
+// Una vez que la partida arrancó, nadie que no estuviera ya en la sala puede
+// sumarse — solo reconectarse con su sessionToken quienes ya tenían un
+// lugar (ver room:join en roomHandlers.js y HU-B09, ventana de gracia).
+export function isRoomLockedForNewJoins(room) {
+  return room.phase !== "waiting_room";
 }

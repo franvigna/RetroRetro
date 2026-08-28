@@ -9,7 +9,7 @@ const { RoomProvider, useRoom, CONNECTION_STATUS } = await import("./RoomContext
 const { ConnectionBanner } = await import("../components/ConnectionBanner.jsx");
 
 function Probe() {
-  const { connectionStatus, room, currentParticipantId, leaveRoom } = useRoom();
+  const { connectionStatus, room, currentParticipantId, leaveRoom, createRoom } = useRoom();
   return (
     <>
       <ConnectionBanner status={connectionStatus} />
@@ -19,9 +19,14 @@ function Probe() {
       <button type="button" onClick={leaveRoom}>
         salir
       </button>
+      <button type="button" onClick={() => createRoom({ hostName: "Cisco" })}>
+        crear
+      </button>
     </>
   );
 }
+
+const STORAGE_KEY = "retroretro:identity";
 
 function renderProbe() {
   return render(
@@ -35,6 +40,7 @@ describe("RoomContext — estados de conexión del socket (mockeado)", () => {
   beforeEach(() => {
     mockSocket.connected = false;
     mockSocket.emit.mockClear();
+    sessionStorage.clear();
   });
 
   it("arranca en estado 'connecting' mientras el socket no conectó", () => {
@@ -136,6 +142,37 @@ describe("RoomContext — estados de conexión del socket (mockeado)", () => {
       mockSocket.trigger("speaker:tick", { remainingSeconds: 30 });
     });
     expect(screen.getByTestId("speaker-remaining")).toHaveTextContent("sin-speaker-timer");
+  });
+
+  it("room:created guarda el sessionToken recibido en sessionStorage, nunca en `room`", () => {
+    renderProbe();
+    fireEvent.click(screen.getByRole("button", { name: "crear" }));
+    act(() => {
+      mockSocket.trigger("room:created", {
+        code: "RETRO-AB12",
+        room: { code: "RETRO-AB12", hostId: "host-1", phase: "waiting_room", cards: [], participants: [] },
+        sessionToken: "token-del-host",
+      });
+    });
+
+    const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+    expect(stored.sessionToken).toBe("token-del-host");
+  });
+
+  it("room:joined guarda el sessionToken recibido, y la reconexión automática siguiente lo usa", () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ code: "RETRO-AB12", name: "Ana", avatarId: null, sessionToken: null })
+    );
+
+    renderProbe();
+    act(() => {
+      mockSocket.trigger("connect");
+      mockSocket.trigger("room:joined", { participantId: "part-1", sessionToken: "token-de-ana" });
+    });
+
+    const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+    expect(stored.sessionToken).toBe("token-de-ana");
   });
 
   it("leaveRoom emite room:leave y limpia room + currentParticipantId", () => {

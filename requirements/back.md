@@ -73,6 +73,28 @@ ver `shared-contract.md`).
 - **Cuando** el `socket.id` emisor no coincide con `RoomState.hostId`,
 - **Entonces** respondo `error:unauthorized` al emisor y **no** modifico el estado de la sala.
 
+**HU-B02b — Reconexión autenticada por sessionToken, sala cerrada a gente nueva tras el inicio**
+> Como servidor, debo autenticar cada reconexión con un secreto propio de cada participante (no
+> con el nombre, que cualquiera puede repetir), y dejar de aceptar participantes nuevos una vez
+> que la partida arrancó, para que nadie pueda entrar como otra persona (el host incluido) ni
+> sumarse a mitad de la retro sin haber estado en las fases anteriores.
+- **Dado** un `room:create` o un `room:join` que da de alta a un participante nuevo,
+- **Entonces** genero un `sessionToken` random para ese participante (ver `generateSessionToken` en
+  `domain/room.js`) y se lo entrego en privado, aparte de `RoomState` (`room:created`/`room:joined`
+  — nunca dentro de `RoomState.participants`, ver `toPublicRoom` y `shared-contract.md` sección 1).
+- **Dado** un evento `room:join` con un `sessionToken`,
+- **Cuando** ese token coincide con el de un participante existente de esa sala,
+- **Entonces** reconecto a esa identidad (mismo `id`, `role`, `avatarId`) y **ignoro** el `name` que
+  venga en el pedido — el token es la única credencial que importa.
+- **Dado** un evento `room:join` sin `sessionToken`, o con uno que no matchea a nadie,
+- **Cuando** `RoomState.phase` es `waiting_room`,
+- **Entonces** doy de alta a un participante nuevo, como siempre (ver HU-B01b para `avatarId`).
+- **Y cuando** `RoomState.phase` ya no es `waiting_room`,
+- **Entonces** respondo `room:join_locked` y no doy de alta a nadie.
+- **Nota:** antes de esta HU, la reconexión matcheaba por `name === name` entre los participantes
+  desconectados — cualquiera podía reconectarse como otro (incluido el host) con solo escribir su
+  nombre exacto mientras esa persona estaba offline. Quedó cerrado.
+
 **HU-B03 — Transición de fases con historial**
 > Como servidor, debo llevar un registro de las fases por las que ya pasó la sala, para poder
 > resolver correctamente un pedido de "volver a fase anterior".
@@ -235,6 +257,8 @@ ver `shared-contract.md`).
 - **Nota:** si el participante desconectado era `currentSpeakerId` en el momento del corte, ese
   valor se mantiene tal cual (no se limpia automáticamente) — es el host quien decide si lo
   cambia manualmente al notar la desconexión.
+- **Ver HU-B02b** para cómo se autentica la reconexión dentro de esta ventana (por `sessionToken`,
+  no por nombre) y por qué eso sigue funcionando aunque la sala ya haya arrancado.
 
 **HU-B10 — Limpieza de salas inactivas**
 > Como servidor, debo liberar de memoria las salas sin participantes conectados tras un tiempo

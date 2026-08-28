@@ -9,7 +9,7 @@ const STEP_NAME = 1;
 export function JoinRoomPage() {
   const navigate = useNavigate();
   const { code: codeFromUrl } = useParams();
-  const { joinRoom, room, roomNotFoundCode, clearRoomNotFound } = useRoom();
+  const { joinRoom, room, roomNotFoundCode, clearRoomNotFound, roomLockedCode, clearRoomLocked } = useRoom();
 
   const [step, setStep] = useState(codeFromUrl ? STEP_NAME : STEP_CODE);
   const [code, setCode] = useState(codeFromUrl || "");
@@ -52,6 +52,7 @@ export function JoinRoomPage() {
     e.preventDefault();
     setTouched(true);
     if (!name.trim()) return;
+    clearRoomLocked();
     joinRoom(code.trim().toUpperCase(), name.trim(), avatarId);
   }
 
@@ -111,6 +112,13 @@ export function JoinRoomPage() {
               {nameError && <span className="field-error">Ingresá tu nombre.</span>}
             </div>
             <AvatarPicker value={avatarId} onChange={setAvatarId} />
+
+            {roomLockedCode === code.trim().toUpperCase() && (
+              <p className="error-banner">
+                Esta partida ya empezó — no se puede sumar gente nueva, solo reconectarse quien ya
+                estaba adentro.
+              </p>
+            )}
 
             <div className="btn-row">
               <button type="button" className="btn btn-ghost" onClick={handleBack}>

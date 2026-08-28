@@ -15,3 +15,14 @@ export function formatMinutesAsHours(totalMinutes) {
   if (minutes === 0) return `${hours}h`;
   return `${hours}h ${minutes}min`;
 }
+
+// Formatea una fecha como "DD/MM/AAAA" a mano (en vez de toLocaleDateString,
+// cuyo resultado depende del locale/ICU del entorno donde corre) — para que
+// el PDF exportado (ver domain/exportPdf.js) se vea igual sin importar el
+// navegador o el sistema operativo de quien lo genera.
+export function formatDateShort(date) {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}

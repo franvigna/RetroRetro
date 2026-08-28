@@ -12,7 +12,16 @@ import { ClosingPage } from "./ClosingPage.jsx";
 // pedimos el nombre a mano si no hay identidad guardada para recuperar.
 export function RoomPage() {
   const { code } = useParams();
-  const { room, joinRoom, roomNotFoundCode, clearRoomNotFound, pendingRejoin, pendingRejoinName } = useRoom();
+  const {
+    room,
+    joinRoom,
+    roomNotFoundCode,
+    clearRoomNotFound,
+    roomLockedCode,
+    clearRoomLocked,
+    pendingRejoin,
+    pendingRejoinName,
+  } = useRoom();
   const [name, setName] = useState("");
   const [touched, setTouched] = useState(false);
 
@@ -33,11 +42,27 @@ export function RoomPage() {
       );
     }
 
+    if (roomLockedCode === code) {
+      return (
+        <div className="page page-narrow">
+          <h1 className="brand-title pixel-text">SALA CERRADA</h1>
+          <div className="cabinet">
+            <div className="cabinet-bezel" />
+            <p className="cabinet-subtitle">
+              La partida en <strong>{code}</strong> ya empezó. Solo puede volver a entrar quien ya
+              estaba adentro — pedile al anfitrión que te comparta un lugar si te sumaste tarde.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     function handleSubmit(e) {
       e.preventDefault();
       setTouched(true);
       if (!name.trim()) return;
       clearRoomNotFound();
+      clearRoomLocked();
       joinRoom(code, name.trim());
     }
 

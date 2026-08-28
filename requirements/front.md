@@ -193,9 +193,9 @@ en pantallas anchas, ni queda pegado a un costado.
 - **Entonces** el frontend valida contra el servidor que la sala existe (o lo valida recién al
   emitir `room:join` al final del paso 2 — decisión de implementación, no cambia el contrato).
 - **Paso 2 — Nombre y personaje:** una vez el código es válido, se muestra un campo de nombre
-  **obligatorio** y una grilla de selección de personaje pixel-art **opcional** (ver
-  `AVATAR_IDS` en `shared-contract.md` sección 1 — 35 personajes 100% originales, ninguno
-  referencia a franquicias de videojuegos reales).
+  **obligatorio** y una grilla de selección de personaje pixel-art **opcional** (ver `AVATAR_IDS`
+  en `shared-contract.md` sección 1 — generados con la herramienta interna Avatar Lab a partir de
+  fotos reales de los integrantes de Jaliscom).
 - **Dado** que estoy en el paso 2 con un código válido,
 - **Cuando** completo mi nombre (y opcionalmente toco un personaje para seleccionarlo — tocar de
   nuevo el mismo lo deselecciona, dejando `avatarId: null`) y confirmo,
@@ -327,15 +327,22 @@ en pantallas anchas, ni queda pegado a un costado.
 > Como cualquier usuario, quiero que si se me corta la conexión, o recargo la página sin querer
 > (F5), recupere mi lugar en la sala (nombre, estrellas ya repartidas) en vez de tener que
 > empezar de cero.
-- El cliente guarda `{ code, name, avatarId }` en `sessionStorage` (única excepción admitida a la
-  restricción de Storage de la sección 5 — nunca el estado de la sala en sí) al crear o unirse a
-  una sala, y lo usa para reintentar `room:join` automáticamente en cuanto el socket conecta,
-  sin volver a pedirle nada a la persona usuaria.
+- El cliente guarda `{ code, name, avatarId, sessionToken }` en `sessionStorage` (única excepción
+  admitida a la restricción de Storage de la sección 5 — nunca el estado de la sala en sí) al crear
+  o unirse a una sala, y lo usa para reintentar `room:join` automáticamente en cuanto el socket
+  conecta, sin volver a pedirle nada a la persona usuaria. `sessionToken` es lo que realmente
+  autentica esa reconexión (ver `shared-contract.md` sección 4 y `back.md` HU-B02b) — sin él
+  guardado en este browser, no hay forma de recuperar la identidad anterior, ni siquiera la propia
+  desde otro dispositivo (trade-off aceptado a propósito, ver la misma sección).
 - Mientras ese auto-join está en curso, se muestra una pantalla de "Reconectando..." — nunca el
   formulario de nombre, que solo aparece si no hay identidad guardada para recuperar (ej: alguien
-  entra por primera vez a la URL de una sala vía el link de otra persona).
+  entra por primera vez a la URL de una sala vía el link de otra persona). En ese caso, escribir un
+  nombre ahí siempre da de alta a alguien nuevo — nunca reconecta como otro participante.
 - Si la sala guardada ya no existe (`room:not_found`), se limpia la identidad guardada para no
   reintentar en loop, y recién ahí se pide el nombre manualmente.
+- Si la partida ya arrancó y el intento de entrar (sin `sessionToken` válido) llega igual, el
+  servidor responde `room:join_locked` — la pantalla de "Reconectar" pasa a mostrar "Sala cerrada"
+  en lugar del formulario, y el paso 2 de "Unirse a sala" muestra el mismo aviso.
 
 **HU-F16b — Nivel 2: repaso de la retro anterior**
 > Como participante, quiero ver el resumen que el anfitrión cargó de la retro anterior al crear
@@ -371,7 +378,8 @@ en pantallas anchas, ni queda pegado a un costado.
 - **Prohibido usar `localStorage` o `sessionStorage` para el estado de la sala** (fases, timer,
   tarjetas, votos, etc.) — eso vive únicamente en memoria de React (Context), reflejando siempre
   lo último recibido en `room:state`. **Única excepción admitida:** `sessionStorage` guarda el
-  mínimo necesario para sobrevivir un refresh de página (HU-F13) — `{ code, name, avatarId }` —,
+  mínimo necesario para sobrevivir un refresh de página (HU-F13) — `{ code, name, avatarId,
+  sessionToken }` —,
   nunca `localStorage` (que sobreviviría entre pestañas/sesiones distintas, lo cual no es
   deseable acá). Se limpia al salir explícitamente de la sala o si el código guardado ya no
   existe.

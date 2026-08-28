@@ -26,8 +26,8 @@ export function CardItem({
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(card.text || "");
   const isActionPlan = card.column === "action_plan";
-  const assigneeNames = isActionPlan
-    ? (card.assigneeIds || []).map((id) => participantsById?.[id]?.name || "?")
+  const assignees = isActionPlan
+    ? (card.assigneeIds || []).map((id) => participantsById?.[id] || { id, name: "?", avatarId: null })
     : [];
   const authorAvatar = getAvatarById(participantsById?.[card.authorId]?.avatarId);
 
@@ -116,28 +116,51 @@ export function CardItem({
       {isActionPlan ? (
         <>
           <span className="card-item-title">{card.text}</span>
-          {assigneeNames.length > 0 && (
-            <span className="card-item-assignees">Responsables: {assigneeNames.join(", ")}</span>
+          {assignees.length > 0 && (
+            <div className="card-item-assignees">
+              <span>Responsables:</span>
+              <ul className="card-item-assignee-list">
+                {assignees.map((assignee) => {
+                  const assigneeAvatar = getAvatarById(assignee.avatarId);
+                  return (
+                    <li key={assignee.id} className="card-item-assignee">
+                      {assigneeAvatar && (
+                        <img
+                          src={assigneeAvatar.src}
+                          alt=""
+                          width="18"
+                          height="18"
+                          className="participant-avatar"
+                        />
+                      )}
+                      {assignee.name}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           )}
         </>
       ) : (
-        <span className="card-item-text">{card.text}</span>
+        <>
+          <span className="card-item-text">{card.text}</span>
+          <div className="card-item-footer">
+            <span className="card-item-author">
+              {authorAvatar && <img src={authorAvatar.src} alt="" width="18" height="18" className="participant-avatar" />}
+              {authorName || "Anónimo"}
+            </span>
+            {showVote ? (
+              <VoteButton
+                voted={voted}
+                remainingVotes={remainingVotes}
+                onVote={(buttonEl) => onVote(card.id, buttonEl, voted)}
+              />
+            ) : (
+              card.votes.length > 0 && <span>★ {card.votes.length}</span>
+            )}
+          </div>
+        </>
       )}
-      <div className="card-item-footer">
-        <span className="card-item-author">
-          {authorAvatar && <img src={authorAvatar.src} alt="" width="18" height="18" className="participant-avatar" />}
-          {authorName || "Anónimo"}
-        </span>
-        {showVote ? (
-          <VoteButton
-            voted={voted}
-            remainingVotes={remainingVotes}
-            onVote={(buttonEl) => onVote(card.id, buttonEl, voted)}
-          />
-        ) : (
-          card.votes.length > 0 && <span>★ {card.votes.length}</span>
-        )}
-      </div>
     </li>
   );
 }

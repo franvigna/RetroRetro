@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import { UnauthorizedError, InvalidActionError } from "../domain/errors.js";
 import { advanceSpeaker } from "../domain/turns.js";
+import { toPublicRoom } from "../domain/room.js";
 import * as roomStore from "../rooms/roomStore.js";
 import { registerRoomHandlers } from "./handlers/roomHandlers.js";
 import { registerPhaseHandlers } from "./handlers/phaseHandlers.js";
@@ -41,7 +42,7 @@ export function setupSocket(httpServer, corsOrigin, { maxConnections = DEFAULT_M
     const visibleCards = room.cards.filter(
       (c) => !KEEP_IMPROVE_TRY_COLUMNS.includes(c.column) || c.authorId === participantId
     );
-    return { ...room, cards: visibleCards };
+    return toPublicRoom({ ...room, cards: visibleCards });
   }
 
   function broadcastRoomState(code) {
@@ -50,7 +51,7 @@ export function setupSocket(httpServer, corsOrigin, { maxConnections = DEFAULT_M
     roomStore.touch(code);
 
     if (room.phase !== "keep_improve_try") {
-      io.to(code).emit("room:state", { room });
+      io.to(code).emit("room:state", { room: toPublicRoom(room) });
       return;
     }
 

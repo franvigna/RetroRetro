@@ -55,67 +55,28 @@ interface Participant {
   connected: boolean;  // false si se desconectó pero la sala lo mantiene por si vuelve
   avatarId: string | null;  // uno de AVATAR_IDS (ver más abajo), o null si no eligió avatar
 }
+// El servidor guarda además un `sessionToken` (secreto) por participante, que
+// NUNCA forma parte de este tipo tal como viaja por la red: se saca de
+// `participants[]` antes de mandar cualquier `RoomState` (room:created,
+// room:joined, room:state — ver back/src/domain/room.js, toPublicRoom). Es la
+// credencial de reconexión; se entrega en privado, aparte de `room`, solo al
+// dueño (ver sección 4, "Manejo de reconexión").
 ```
 
-**Avatares (`avatarId`):** set fijo y cerrado de 48 personajes pixel-art 100% originales, con
-hombros/torso visible y fondo transparente. Cada uno es un **arquetipo propio** (peinado, barba,
-anteojos, anteojos de sol, gorra, gorro de lana, trenzas, auriculares, máscara, etc.) en vez de
-una simple recombinación de color sobre una única plantilla, sin ningún parecido a personas reales
-ni a personajes de franquicias existentes. Nunca mascotas, logos o assets de franquicias/lenguajes/
-sistemas operativos reales (regla obligatoria de `CLAUDE.md`). Es un campo **opcional**: si el
-participante no elige ninguno, `avatarId` queda en `null` y la UI muestra un ícono neutro genérico
-en su lugar.
+**Avatares (`avatarId`):** referencia a un personaje pixel-art del set `AVATAR_IDS`. Generados con
+la herramienta interna Avatar Lab (`front/src/pages/AvatarLabPage.jsx`, ruta `/dev/avatar-lab`) a
+partir de fotos reales de los integrantes de Jaliscom, con hombros/torso visible y fondo
+transparente. Es un campo **opcional**: si el participante no elige ninguno, `avatarId` queda en
+`null` y la UI muestra un ícono neutro genérico en su lugar.
 
 ```ts
 const AVATAR_IDS = [
-  "afro-pelirrojo-bigote",
-  "pelo-largo-lentes-sol-rojo",
-  "calvo-barba-canosa-anteojos",
-  "rulos-violeta-pecoso",
-  "cinta-deportiva-rubio",
-  "pelo-corto-pecoso-sonriente",
-  "canoso-barba-naranja",
-  "anteojos-marco-negro-morocha",
-  "mohicano-verde-punk",
-  "pelo-corto-oscuro-gorra-lateral",
-  "pelirrojo-flequillo",
-  "rulos-violeta-suave",
-  "trenzas-rubias-cinta",
-  "pelirrojo-pecoso-sonriente",
-  "canoso-anteojos-sonriente",
-  "pelo-negro-lentes-sol-mujer",
-  "afro-magenta-anteojos",
-  "calvo-barba-tatuajes-cuello",
-  "afro-cian-anteojos-rosa",
-  "gorra-roja-pecoso",
-  "canoso-auriculares-sonriente",
-  "rubio-lentes-sol-clasico",
-  "pelo-negro-aros-coloridos",
-  "afro-magenta-sonriente",
-  "calvo-barba-aros-tatuajes",
-  "afro-celeste-anteojos-rosados",
-  "cresta-celeste-goblin",
-  "pelo-rosa-largo-choker",
-  "gorra-violeta-pecoso-sonriente",
-  "cresta-violeta-sonriente",
-  "calvo-barba-collar-tribal",
-  "afro-celeste-anteojos-rosa-oscuro",
-  "pelo-rosa-choker-mujer",
-  "mascara-oscura-ojos-brillantes",
-  "afro-violeta-oscuro",
-  "gorro-celeste-piel-verde",
-  "pelo-castano-aros-coloridos",
-  "orco-verde-anteojos-rosa",
-  "lentes-sol-negro-barba",
-  "anteojos-marco-gris-bigote",
-  "trenzas-largas-sonriente",
-  "pelo-castano-corto-anteojos-mujer",
-  "gorro-lana-canoso-anteojos",
-  "lentes-sol-negro-gorra-atras",
-  "canoso-anteojos-barba-blanca",
-  "lentes-sol-barba-negra",
-  "anteojos-marco-gris-sport",
-  "trenzas-negras-sonriente",
+  "cisco",
+  "licha",
+  "juampy",
+  "mili",
+  "agus",
+  "sergio",
 ] as const;
 
 type CardColumn = "keep" | "improve" | "try" | "action_plan";
@@ -230,7 +191,7 @@ y votó**, no de algo decidido de antemano por el host.
 | Evento | Payload | Quién puede emitirlo | Descripción |
 |---|---|---|---|
 | `room:create` | `{ hostName: string, starsPerParticipant?: number, secondsPerSpeaker?: number, avatarId?: string, previousActionNotes?: string }` | Cualquiera (se vuelve host) | Crea una sala nueva. `starsPerParticipant` define cuántas estrellas tiene cada participante para repartir en el Nivel 5 (Ranking de estrellas) (mínimo 1, máximo 10). `secondsPerSpeaker` define cuántos segundos habla cada persona en el Nivel 4 antes de rotar (mínimo 30, máximo 300). Si no se envían, el servidor aplica los valores por defecto (`5` y `60` respectivamente). `avatarId` es opcional (ver `AVATAR_IDS` en sección 1); si no se envía o no es válido, queda `null`. `previousActionNotes` es texto libre opcional (máximo 2000 caracteres tras `.trim()`) mostrado en el Nivel 2; si no se envía, queda `""`. El servidor genera `code` y responde con `room:created`. |
-| `room:join` | `{ code: string, name: string, avatarId?: string }` | Cualquiera | Une al participante a una sala existente en estado `waiting_room` o ya iniciada. `avatarId` es opcional (ver `AVATAR_IDS` en sección 1); si no se envía o no es válido, queda `null`. |
+| `room:join` | `{ code: string, name: string, avatarId?: string, sessionToken?: string }` | Cualquiera | Une al participante a una sala existente, o lo reconecta. `sessionToken` es la credencial real de reconexión (ver sección 4) — si coincide con la de un participante ya existente, `name`/`avatarId` de este pedido se ignoran y se conserva la identidad original. Sin un `sessionToken` que matchee, es siempre alguien nuevo: si la sala sigue en `waiting_room`, se crea un participante (con `avatarId` opcional, ver `AVATAR_IDS` en sección 1; si no se envía o no es válido, queda `null`); si la sala ya avanzó de fase, el servidor responde `room:join_locked` en su lugar y no crea a nadie. |
 | `phase:start_session` | `{}` | Solo host | Pasa de `waiting_room` a `welcome`, arranca el flujo. |
 | `phase:advance` | `{}` | Solo host | Cierra la fase actual y avanza a la siguiente. |
 | `phase:go_back` | `{}` | Solo host | Vuelve a la fase anterior según `phaseHistory`. |
@@ -262,9 +223,11 @@ mismos datos que ya viajan en `room:state`.
 
 | Evento | Payload | Cuándo se emite | A quién |
 |---|---|---|---|
-| `room:created` | `{ code: string, room: RoomState }` | Al crear la sala exitosamente | Solo al creador |
+| `room:created` | `{ code: string, room: RoomState, sessionToken: string }` | Al crear la sala exitosamente | Solo al creador. `sessionToken` es la credencial de reconexión del host (ver sección 4) — nunca viaja dentro de `room`. |
+| `room:joined` | `{ participantId: string, sessionToken: string }` | Al procesar un `room:join` exitoso (alta nueva o reconexión) | Solo a quien lo pidió. `participantId` puede diferir de `socket.id` en una reconexión (se reutiliza el id histórico) — es la única forma confiable de que el cliente sepa su propia identidad. `sessionToken` es siempre el mismo participante-token que viaja en el resto de la sesión: nuevo si se creó un participante, o el existente si fue una reconexión válida. |
 | `room:state` | `{ room: RoomState }` | Cada vez que cambia cualquier parte del estado (fase, timer, tarjetas, votos, participantes) | A todos los conectados a esa sala. **Excepción:** mientras `phase === "keep_improve_try"`, cada socket recibe una copia de `room` con `cards` filtrado a solo sus propias tarjetas de esa fase (ver sección 1, "Visibilidad de tarjetas durante keep_improve_try") — deja de ser un único payload idéntico para todos en ese momento puntual. |
 | `room:not_found` | `{ code: string }` | Si `room:join` usa un código inexistente | Solo a quien lo pidió |
+| `room:join_locked` | `{ code: string }` | Si `room:join` no trae un `sessionToken` válido y la sala ya no está en `waiting_room` (ver sección 4) | Solo a quien lo pidió |
 | `timer:tick` | `{ remainingSeconds: number }` | Cada segundo mientras el timer sigue `running` | A todos los conectados a esa sala. **Excepción:** el tick que hace que `remainingSeconds` llegue a `0` (y por lo tanto `timer.status` pasa a `finished`) se emite como `room:state` completo en su lugar, no como `timer:tick` — el cambio de `status` tiene que llegar al cliente para poder mostrar la alarma de fin de timer (ver front.md HU-F16), y `timer:tick` no lleva `status` en su payload. |
 | `speaker:tick` | `{ remainingSeconds: number }` | Cada segundo mientras `speakerTimer.status === "running"` (solo durante `expression_round`) | A todos los conectados a esa sala |
 | `error:unauthorized` | `{ action: string }` | Si un participante intenta una acción reservada al host | Solo a quien lo intentó |
@@ -288,18 +251,33 @@ un servidor lleno (ver front.md, estado de conexión `SERVER_FULL`).
 
 ## 4. Manejo de reconexión
 
+- **La reconexión se autentica por `sessionToken`, nunca por `name`.** Versión anterior de este
+  documento (y del código) reconectaba matcheando `name` contra los participantes desconectados de
+  la sala — cualquiera podía volver a entrar como otra persona, host incluido, con solo escribir su
+  nombre mientras estaba offline. Se corrigió: el servidor entrega un `sessionToken` random por
+  participante (`room:created`/`room:joined`, nunca dentro de `RoomState.participants` — ver
+  sección 1), y `room:join` solo reconecta la identidad original si el `sessionToken` recibido
+  coincide con el guardado para ese participante. Sin ese token, `room:join` **siempre** da de alta
+  a alguien nuevo, sin importar qué nombre se escriba.
 - Si un participante recarga la página (F5) o se desconecta brevemente, el cliente guarda
-  `{ code, name, avatarId }` en `sessionStorage` (excepción puntual a la restricción de Storage de
-  `front.md` — solo este mínimo, nunca el estado completo de la sala) para reintentar el
-  `room:join` automáticamente a la misma sala sin volver a pedirle el nombre a la persona usuaria.
-  Se limpia al salir explícitamente de la sala (`room:leave`) o si el servidor responde
+  `{ code, name, avatarId, sessionToken }` en `sessionStorage` (excepción puntual a la restricción
+  de Storage de `front.md` — solo este mínimo, nunca el estado completo de la sala) para reintentar
+  el `room:join` automáticamente a la misma sala sin volver a pedirle nada a la persona usuaria. Se
+  limpia al salir explícitamente de la sala (`room:leave`) o si el servidor responde
   `room:not_found` para ese código.
-- La identidad reutiliza el mismo `room:join` de siempre — el servidor la matchea por `name` entre
-  los participantes desconectados de esa sala (ver `roomHandlers.js`), no hace falta ningún evento
-  nuevo para la reconexión.
+- **Trade-off aceptado a propósito:** sin el `sessionToken` guardado en ese browser (se borró el
+  storage, o se abre la sala desde otro dispositivo/navegador) no hay forma de recuperar una
+  identidad anterior — se entra como alguien nuevo. Es la contraparte necesaria de cerrar la
+  suplantación de identidad; para un equipo chico y de confianza como Jaliscom el costo es bajo.
 - El servidor mantiene al participante en `RoomState.participants` con `connected: false` por un
   tiempo de gracia (sugerido: 5 minutos) antes de removerlo definitivamente, para tolerar cortes
-  de red cortos sin perder su nombre ni sus votos previos.
+  de red cortos sin perder su nombre ni sus votos previos. Reconectarse con el `sessionToken`
+  correcto funciona en cualquier fase, incluso después de `waiting_room` (ver el punto siguiente).
+- **La sala se cierra a gente nueva una vez que arrancó.** Mientras `RoomState.phase` sigue en
+  `waiting_room`, `room:join` sin un `sessionToken` válido da de alta a un participante nuevo como
+  siempre. Apenas la fase avanza, ese mismo pedido responde `room:join_locked` en su lugar — solo
+  quien ya tenía un lugar (con su `sessionToken`) puede volver a entrar. Evita que alguien se sume
+  a mitad de la retro sin haber estado en las fases anteriores.
 - Si el **host** se desconecta, la sala sigue viva pero sin nadie que pueda avanzar fases hasta
   que reconecte. No se reasigna el rol de host automáticamente en el MVP (posible mejora futura).
 

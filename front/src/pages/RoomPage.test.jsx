@@ -42,7 +42,10 @@ describe("RoomPage — recuperar sesión tras un refresh (HU-F13)", () => {
   });
 
   it("con identidad guardada en sessionStorage, reintenta room:join solo y muestra 'conectando'", () => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ code: "RETRO-AB12", name: "Ana", avatarId: null }));
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ code: "RETRO-AB12", name: "Ana", avatarId: null, sessionToken: "token-ana" })
+    );
 
     renderRoomRoute("RETRO-AB12");
     act(() => {
@@ -51,10 +54,14 @@ describe("RoomPage — recuperar sesión tras un refresh (HU-F13)", () => {
 
     expect(screen.getByRole("heading", { name: "RECONECTANDO" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Tu nombre")).not.toBeInTheDocument();
+    // El sessionToken guardado es lo que autentica la reconexión automática
+    // (ver room:join en back/src/socket/handlers/roomHandlers.js) — sin él,
+    // el servidor trataría esto como un participante nuevo.
     expect(mockSocket.emit).toHaveBeenCalledWith("room:join", {
       code: "RETRO-AB12",
       name: "Ana",
       avatarId: null,
+      sessionToken: "token-ana",
     });
   });
 
@@ -87,6 +94,17 @@ describe("RoomPage — recuperar sesión tras un refresh (HU-F13)", () => {
 
     expect(screen.queryByRole("heading", { name: "RECONECTANDO" })).not.toBeInTheDocument();
     expect(screen.getByText("INSERTAR MONEDA")).toBeInTheDocument();
+  });
+
+  it("room:join_locked muestra 'SALA CERRADA' en vez del formulario de reconexión", () => {
+    renderRoomRoute("RETRO-AB12");
+    act(() => {
+      mockSocket.trigger("connect");
+      mockSocket.trigger("room:join_locked", { code: "RETRO-AB12" });
+    });
+
+    expect(screen.getByRole("heading", { name: "SALA CERRADA" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Tu nombre")).not.toBeInTheDocument();
   });
 
   it("si la sala guardada ya no existe, limpia la identidad y no reintenta en loop", () => {

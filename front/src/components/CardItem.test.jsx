@@ -1,9 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { CardItem } from "./CardItem.jsx";
+import { AVATARS } from "../domain/avatars.js";
 
 const participants = [
-  { id: "p1", name: "Cisco", role: "host", connected: true },
+  { id: "p1", name: "Cisco", role: "host", connected: true, avatarId: AVATARS[0].id },
   { id: "p2", name: "Ana", role: "participant", connected: true },
 ];
 const participantsById = Object.fromEntries(participants.map((p) => [p.id, p]));
@@ -157,5 +158,62 @@ describe("CardItem — edición y eliminación (HU-F09c)", () => {
       "action_plan",
       expect.objectContaining({ text: "Editado", assigneeIds: ["p2"] })
     );
+  });
+});
+
+describe("CardItem — tarjeta de acción concreta (Nivel 7)", () => {
+  const actionPlanCard = {
+    id: "c3",
+    column: "action_plan",
+    text: "Documentar el deploy",
+    assigneeIds: ["p1"],
+    authorId: "p2",
+    votes: [],
+  };
+
+  it("no muestra quién creó la acción concreta", () => {
+    render(
+      <ul>
+        <CardItem
+          card={actionPlanCard}
+          authorName="Ana"
+          participantsById={participantsById}
+          participants={participants}
+          isOwn={false}
+        />
+      </ul>
+    );
+    expect(screen.queryByText("Ana")).not.toBeInTheDocument();
+  });
+
+  it("muestra el nombre y el avatar de cada responsable asignado", () => {
+    render(
+      <ul>
+        <CardItem
+          card={actionPlanCard}
+          authorName="Ana"
+          participantsById={participantsById}
+          participants={participants}
+          isOwn={false}
+        />
+      </ul>
+    );
+    expect(screen.getByText("Cisco")).toBeInTheDocument();
+    expect(screen.getByAltText("")).toHaveAttribute("src", AVATARS[0].src);
+  });
+
+  it("una tarjeta de keep/improve/try sigue mostrando a quién la escribió", () => {
+    render(
+      <ul>
+        <CardItem
+          card={simpleCard}
+          authorName="Cisco"
+          participantsById={participantsById}
+          participants={participants}
+          isOwn={false}
+        />
+      </ul>
+    );
+    expect(screen.getByText("Cisco")).toBeInTheDocument();
   });
 });

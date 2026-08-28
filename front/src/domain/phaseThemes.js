@@ -111,12 +111,24 @@ export const COLUMN_LABELS = {
   action_plan: "Guardar partida",
 };
 
-// Pregunta disparadora corta debajo de cada título de columna, para ayudar a
-// arrancar a escribir sin tener que explicar la dinámica de memoria.
+// Preguntas disparadoras cortas debajo de cada título de columna, para
+// ayudar a arrancar a escribir sin tener que explicar la dinámica de
+// memoria. Más de una por columna, cada una mirando un ángulo distinto
+// (equipo/proceso, individual/colectivo), para que sirvan de gatillo aunque
+// la primera no dispare nada.
 export const COLUMN_PROMPTS = {
-  keep: "¿Qué funcionó y hay que mantener?",
-  improve: "¿Qué se puede mejorar?",
-  try: "¿Qué nos gustaría probar?",
+  keep: [
+    "¿Qué funcionó bien y no queremos perder?",
+    "¿Qué costumbre o práctica del equipo vale la pena repetir?",
+  ],
+  improve: [
+    "¿Qué se puede mejorar?",
+    "¿Qué nos generó fricción, demoras o malentendidos?",
+  ],
+  try: [
+    "¿Qué nos gustaría probar la próxima vez?",
+    "¿Hay algo nuevo (herramienta, proceso o dinámica) que queramos animarnos a probar?",
+  ],
 };
 
 export const MIN_STARS_PER_PARTICIPANT = 1;
