@@ -125,13 +125,12 @@ describe("CardItem — edición y eliminación (HU-F09c)", () => {
     expect(onDelete).toHaveBeenCalledWith("c1");
   });
 
-  it("editar una action_plan propia usa el formulario título/descripción/responsables", () => {
+  it("editar una action_plan propia usa el formulario de acción concreta/responsables", () => {
     const onEdit = vi.fn();
     const actionPlanCard = {
       id: "c2",
       column: "action_plan",
-      title: "Original",
-      description: "desc",
+      text: "Original",
       assigneeIds: ["p2"],
       authorId: "p1",
       votes: [],
@@ -150,13 +149,13 @@ describe("CardItem — edición y eliminación (HU-F09c)", () => {
       </ul>
     );
     fireEvent.click(screen.getByLabelText("Editar tarjeta"));
-    fireEvent.change(screen.getByLabelText("Título"), { target: { value: "Editado" } });
+    fireEvent.change(screen.getByLabelText("Acción concreta"), { target: { value: "Editado" } });
     fireEvent.click(screen.getByText("Guardar"));
 
     expect(onEdit).toHaveBeenCalledWith(
       "c2",
       "action_plan",
-      expect.objectContaining({ title: "Editado", assigneeIds: ["p2"] })
+      expect.objectContaining({ text: "Editado", assigneeIds: ["p2"] })
     );
   });
 });

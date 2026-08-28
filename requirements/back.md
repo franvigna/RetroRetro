@@ -35,10 +35,11 @@ ver `shared-contract.md`).
 > Como servidor, debo generar un código de sala que no colisione con salas activas existentes, y
 > guardar la configuración de estrellas que definió el host, para que cada anfitrión tenga un
 > identificador propio y una sesión ajustada a su equipo.
-- **Dado** un pedido `room:create` con `{ hostName, starsPerParticipant?, secondsPerSpeaker? }`,
+- **Dado** un pedido `room:create` con
+  `{ hostName, starsPerParticipant?, secondsPerSpeaker?, previousActionNotes? }`,
 - **Cuando** genero el código,
 - **Entonces** verifico que no exista ya en el mapa de salas activas antes de asignarlo.
-- **Y** valido `starsPerParticipant`: si no viene, uso `3` por defecto; si viene, debe ser un
+- **Y** valido `starsPerParticipant`: si no viene, uso `5` por defecto; si viene, debe ser un
   entero entre `1` y `10` inclusive.
 - **Y si** `starsPerParticipant` viene fuera de ese rango, respondo `error:invalid_action` y no
   creo la sala.
@@ -46,6 +47,10 @@ ver `shared-contract.md`).
   entero entre `30` y `300` inclusive (ver HU-B07, rotación automática del Nivel 4).
 - **Y si** `secondsPerSpeaker` viene fuera de ese rango, respondo `error:invalid_action` y no creo
   la sala.
+- **Y** valido `previousActionNotes`: si no viene, uso `""` por defecto; si viene, lo recorto
+  (`.trim()`) y rechazo con `error:invalid_action` si supera los 2000 caracteres. Es texto libre
+  sin ninguna otra validación de formato — el host lo pega tal cual (ej: copiado del Game Over de
+  la retro anterior) para que se muestre en el Nivel 2 (ver HU-F16b en front.md).
 
 **HU-B01b — Validación de `avatarId` opcional (room:create y room:join)**
 > Como servidor, debo validar el `avatarId` que envía un participante al crear o unirse a una
@@ -101,6 +106,10 @@ ver `shared-contract.md`).
 - **Y si** el resultado clampeado no cambia nada (el timer ya estaba en `0`),
 - **Entonces** igual acepto la operación sin error (es un no-op válido, no hay motivo de negocio
   para rechazarla).
+- **`timer:add_time` también es válido con el timer en `finished`** — es justamente el caso de uso
+  del botón "+5 min" del aviso de alarma (HU-B04/HU-F16): sumar segundos con el timer en `finished`
+  y un resultado > 0 lo reactiva a `running` (retoma el conteo); restar (o sumar 0 neto) lo deja en
+  `finished` con `remainingSeconds` en 0.
 - **Sin efecto durante `expression_round`** — esa fase no tiene `RoomState.timer` relevante (ver
   HU-B07), el frontend oculta los controles +5min/-5min en ese nivel.
 
@@ -112,11 +121,10 @@ ver `shared-contract.md`).
   corresponde a la fase actual,
 - **Entonces** respondo `error:invalid_action` con el motivo, sin agregar la tarjeta.
 - **Dado** un evento `card:add` para columna `action_plan`,
-- **Cuando** `title` está vacío o supera los 512 caracteres, `description` supera los 512
-  caracteres, o la fase actual no es `action_plan`,
+- **Cuando** `text` está vacío o supera los 512 caracteres, o la fase actual no es `action_plan`,
 - **Entonces** respondo `error:invalid_action` con el motivo, sin agregar la tarjeta.
-- **Y** `description` y `assigneeIds` son opcionales: si `assigneeIds` viene, cada id debe existir
-  en `RoomState.participants` (cualquier id que no exista se rechaza con `error:invalid_action`).
+- **Y** `assigneeIds` es opcional: si viene, cada id debe existir en `RoomState.participants`
+  (cualquier id que no exista se rechaza con `error:invalid_action`).
 
 **HU-B05b — Visibilidad filtrada de tarjetas propias durante keep_improve_try**
 > Como servidor, debo ocultarle a cada participante las tarjetas ajenas mientras la fase
@@ -289,7 +297,10 @@ antes de implementarlo, no directamente en el código.
   la función que deriva el Top 3 devuelve las 3 con más `votes.length`, ordenadas de mayor a
   menor, y maneja el caso de empate según el criterio que se defina en la etapa de plan.
 - Validación de `starsPerParticipant` al crear sala: valores fuera de 1-10 son rechazados; sin
-  valor, se aplica el default de 3; valores dentro del rango se guardan tal cual.
+  valor, se aplica el default de 5; valores dentro del rango se guardan tal cual.
+- Validación de `previousActionNotes` al crear sala: sin valor, se guarda `""`; con valor, se
+  recorta (`.trim()`) y se guarda tal cual si no supera los 2000 caracteres; se rechaza con
+  `error:invalid_action` si los supera.
 - Lógica de `turn:set_speaker`/`turn:clear_speaker`: un evento de un socket que no es el host es
   rechazado con `error:unauthorized` y no modifica `currentSpeakerId`; el mismo evento del host
   con un `participantId` válido sí lo actualiza; un `participantId` inexistente devuelve
@@ -343,11 +354,14 @@ antes de implementarlo, no directamente en el código.
   durante la propia sesión (Top 3 por cantidad de estrellas), calculado automáticamente. Lo único
   configurable por el host es la cantidad de estrellas por participante (`starsPerParticipant`).
 - **"Responsable y fecha de la próxima retro" (Cierre):** se resuelve como **(a)** — cada tarjeta
-  de `action_plan` tiene su propio `title`, `description` opcional y `assigneeIds` opcional
-  (array de `Participant.id`; puede ser una persona, varias, o todo el equipo listando a todos
-  los ids). No hay un campo `dueDate` explícito ni un dato separado de "próxima sesión" a nivel
+  de `action_plan` tiene su propio `text` (la acción concreta) y `assigneeIds` opcional (array de
+  `Participant.id`; puede ser una persona, varias, o todo el equipo listando a todos los ids). No
+  hay un campo `dueDate` explícito ni un dato separado de "próxima sesión" a nivel
   de sala — el "para revisar en la próxima retro" se resuelve simplemente porque el plan de
-  acción queda visible en pantalla en "Game Over" durante esa sesión. La exportación (para
-  llevarlo formalmente a la próxima retro) queda **fuera del MVP** — el modelo de datos ya está
-  preparado para soportarla en una iteración futura, pero no se implementa ningún botón de
-  exportar todavía.
+  acción queda visible en pantalla en "Game Over" durante esa sesión.
+- **Continuidad manual entre retros distintas (Nivel 2):** no hay persistencia real entre salas
+  (fuera del MVP, sigue sin haber base de datos). La continuidad se resuelve con
+  `previousActionNotes`: texto libre que el host pega a mano al crear la sala (por ejemplo,
+  copiado del "PLAN DE ACCIÓN CONSOLIDADO" del Game Over de la retro anterior), guardado tal cual
+  en esta sala puntual y mostrado en el Nivel 2. No es una exportación ni un vínculo real entre
+  sesiones — es la forma más simple de no perder el hilo sin sumar scope de persistencia.

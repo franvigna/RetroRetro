@@ -2,28 +2,26 @@ import { useState } from "react";
 import { AssigneeSelect } from "./AssigneeSelect.jsx";
 import { CARD_TEXT_MAX_LENGTH } from "./CardColumn.jsx";
 
-// Formulario de tarjeta de action_plan (Nivel 7 y Game Over): título
-// requerido + descripción opcional + responsables opcionales, en vez del
-// campo de texto libre simple que usan keep/improve/try (ver shared-contract
-// sección 1: Card.title/description/assigneeIds solo aplica a action_plan).
+// Formulario de tarjeta de action_plan (Nivel 7 y Game Over): texto de la
+// acción concreta requerido + responsables opcionales, en vez del campo de
+// texto libre simple que usan keep/improve/try (ver shared-contract sección
+// 1: Card.text/assigneeIds solo aplica assigneeIds a action_plan).
 export function ActionPlanForm({ participants, onSubmit, initialValues, submitLabel = "Agregar" }) {
-  const [title, setTitle] = useState(initialValues?.title || "");
-  const [description, setDescription] = useState(initialValues?.description || "");
+  const [text, setText] = useState(initialValues?.text || "");
   const [assigneeIds, setAssigneeIds] = useState(initialValues?.assigneeIds || []);
   const [touched, setTouched] = useState(false);
   const isEditMode = Boolean(initialValues);
 
-  const trimmedTitle = title.trim();
-  const isEmpty = touched && trimmedTitle.length === 0;
+  const trimmedText = text.trim();
+  const isEmpty = touched && trimmedText.length === 0;
 
   function handleSubmit(e) {
     e.preventDefault();
     setTouched(true);
-    if (!trimmedTitle) return;
-    onSubmit({ title: trimmedTitle, description: description.trim(), assigneeIds });
+    if (!trimmedText) return;
+    onSubmit({ text: trimmedText, assigneeIds });
     if (!isEditMode) {
-      setTitle("");
-      setDescription("");
+      setText("");
       setAssigneeIds([]);
       setTouched(false);
     }
@@ -31,29 +29,17 @@ export function ActionPlanForm({ participants, onSubmit, initialValues, submitLa
 
   return (
     <form onSubmit={handleSubmit} className="action-plan-form action-plan-form-row">
-      <div className="field action-plan-field-title">
-        <label htmlFor="action-plan-title">Título</label>
+      <div className="field action-plan-field-text">
+        <label htmlFor="action-plan-text">Acción concreta</label>
         <input
-          id="action-plan-title"
+          id="action-plan-text"
           type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           placeholder="Ej: Documentar el proceso de deploy"
           maxLength={CARD_TEXT_MAX_LENGTH}
         />
-        {isEmpty && <span className="field-error">El título no puede estar vacío.</span>}
-      </div>
-
-      <div className="field action-plan-field-description">
-        <label htmlFor="action-plan-description">Descripción (opcional)</label>
-        <input
-          id="action-plan-description"
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Sumá detalle si hace falta..."
-          maxLength={CARD_TEXT_MAX_LENGTH}
-        />
+        {isEmpty && <span className="field-error">La acción no puede estar vacía.</span>}
       </div>
 
       <AssigneeSelect participants={participants} selectedIds={assigneeIds} onChange={setAssigneeIds} />

@@ -57,28 +57,65 @@ interface Participant {
 }
 ```
 
-**Avatares (`avatarId`):** set fijo y cerrado de 12 personajes pixel-art 100% originales,
-inspirados en íconos clásicos de sistemas operativos y computación (carpeta, ventana, disco,
-terminal, etc.), con formas grandes y alto contraste a propósito — a 16x16 el detalle fino se
-vuelve ilegible. Nunca mascotas, logos o assets de franquicias/lenguajes/sistemas operativos
-reales (regla obligatoria de `CLAUDE.md`, ej: nada de Tux, el Gopher de Go, Rust crab, ni sprites
-de juegos existentes). Es un campo **opcional**: si el participante no elige ninguno, `avatarId`
-queda en `null` y la UI muestra un ícono neutro genérico en su lugar.
+**Avatares (`avatarId`):** set fijo y cerrado de 48 personajes pixel-art 100% originales, con
+hombros/torso visible y fondo transparente. Cada uno es un **arquetipo propio** (peinado, barba,
+anteojos, anteojos de sol, gorra, gorro de lana, trenzas, auriculares, máscara, etc.) en vez de
+una simple recombinación de color sobre una única plantilla, sin ningún parecido a personas reales
+ni a personajes de franquicias existentes. Nunca mascotas, logos o assets de franquicias/lenguajes/
+sistemas operativos reales (regla obligatoria de `CLAUDE.md`). Es un campo **opcional**: si el
+participante no elige ninguno, `avatarId` queda en `null` y la UI muestra un ícono neutro genérico
+en su lugar.
 
 ```ts
 const AVATAR_IDS = [
-  "carpeta",
-  "ventana",
-  "disco",
-  "terminal",
-  "cd",
-  "documento",
-  "reloj-carga",
-  "bombilla",
-  "engranaje",
-  "candado",
-  "papelera",
-  "tarjeta-perforada",
+  "afro-pelirrojo-bigote",
+  "pelo-largo-lentes-sol-rojo",
+  "calvo-barba-canosa-anteojos",
+  "rulos-violeta-pecoso",
+  "cinta-deportiva-rubio",
+  "pelo-corto-pecoso-sonriente",
+  "canoso-barba-naranja",
+  "anteojos-marco-negro-morocha",
+  "mohicano-verde-punk",
+  "pelo-corto-oscuro-gorra-lateral",
+  "pelirrojo-flequillo",
+  "rulos-violeta-suave",
+  "trenzas-rubias-cinta",
+  "pelirrojo-pecoso-sonriente",
+  "canoso-anteojos-sonriente",
+  "pelo-negro-lentes-sol-mujer",
+  "afro-magenta-anteojos",
+  "calvo-barba-tatuajes-cuello",
+  "afro-cian-anteojos-rosa",
+  "gorra-roja-pecoso",
+  "canoso-auriculares-sonriente",
+  "rubio-lentes-sol-clasico",
+  "pelo-negro-aros-coloridos",
+  "afro-magenta-sonriente",
+  "calvo-barba-aros-tatuajes",
+  "afro-celeste-anteojos-rosados",
+  "cresta-celeste-goblin",
+  "pelo-rosa-largo-choker",
+  "gorra-violeta-pecoso-sonriente",
+  "cresta-violeta-sonriente",
+  "calvo-barba-collar-tribal",
+  "afro-celeste-anteojos-rosa-oscuro",
+  "pelo-rosa-choker-mujer",
+  "mascara-oscura-ojos-brillantes",
+  "afro-violeta-oscuro",
+  "gorro-celeste-piel-verde",
+  "pelo-castano-aros-coloridos",
+  "orco-verde-anteojos-rosa",
+  "lentes-sol-negro-barba",
+  "anteojos-marco-gris-bigote",
+  "trenzas-largas-sonriente",
+  "pelo-castano-corto-anteojos-mujer",
+  "gorro-lana-canoso-anteojos",
+  "lentes-sol-negro-gorra-atras",
+  "canoso-anteojos-barba-blanca",
+  "lentes-sol-barba-negra",
+  "anteojos-marco-gris-sport",
+  "trenzas-negras-sonriente",
 ] as const;
 
 type CardColumn = "keep" | "improve" | "try" | "action_plan";
@@ -89,22 +126,20 @@ interface Card {
   authorId: string;    // Participant.id
   votes: string[];      // array de Participant.id que le dieron su "estrella" a esta tarjeta (evita duplicados)
 
-  // keep / improve / try: texto libre simple. Máximo 512 caracteres (ver "Límite de caracteres").
+  // Todas las columnas (keep/improve/try/action_plan): texto libre de la tarjeta/acción concreta.
+  // Máximo 512 caracteres (ver "Límite de caracteres").
   text?: string;
 
-  // action_plan: título + descripción + responsables, en vez de `text` (ver back.md sección 5,
-  // pregunta resuelta sobre "responsable y fecha de la próxima retro"). La exportación de este
-  // plan (PDF/copiar/Notion) queda fuera del MVP — el modelo ya está preparado para eso.
-  // title y description: máximo 512 caracteres cada uno (ver "Límite de caracteres").
-  title?: string;
-  description?: string;
+  // action_plan además suma responsables (ver back.md sección 5, pregunta resuelta sobre
+  // "responsable y fecha de la próxima retro"). La exportación de este plan (PDF/copiar/Notion)
+  // queda fuera del MVP — el modelo ya está preparado para eso.
   assigneeIds?: string[];  // Participant.id de los responsables. Vacío o ausente = sin asignar. Incluir el id de TODOS los participantes representa "responsable: todo el equipo".
 }
 ```
 
-**Límite de caracteres:** `text`, `title` y `description` tienen un máximo de **512 caracteres**
-cada uno (tras aplicar `.trim()`). El servidor rechaza `card:add`/`card:edit` con
-`error:invalid_action` si algún campo lo excede — es el único lugar de verdad, el `maxLength` del
+**Límite de caracteres:** `text` tiene un máximo de **512 caracteres** (tras aplicar `.trim()`),
+igual en todas las columnas. El servidor rechaza `card:add`/`card:edit` con
+`error:invalid_action` si lo excede — es el único lugar de verdad, el `maxLength` del
 frontend es solo una ayuda de UX, nunca la validación real.
 
 **Visibilidad de tarjetas durante `keep_improve_try` (anti-anclaje):** mientras la fase actual
@@ -131,10 +166,11 @@ interface RoomState {
   timer: TimerState;
   participants: Participant[];
   cards: Card[];
-  starsPerParticipant: number;  // configurado por el host al crear la sala. Min 1, max 10, default 3.
+  starsPerParticipant: number;  // configurado por el host al crear la sala. Min 1, max 10, default 5.
   currentSpeakerId: string | null; // Participant.id con la palabra durante "expression_round". null en cualquier otra fase o si nadie fue marcado todavía.
   secondsPerSpeaker: number;   // configurado por el host al crear la sala. Min 30, max 300, default 60. Ver "Rotación automática del Nivel 4".
   speakerTimer: SpeakerTimerState | null; // mini-timer del orador actual durante expression_round. null si currentSpeakerId es null.
+  previousActionNotes: string; // texto libre opcional que el host pega al crear la sala (ej: acciones concretas de la retro anterior, copiadas a mano del Game Over previo). Se muestra tal cual en el Nivel 2 (previous_action). Máximo 2000 caracteres. No es persistencia real entre sesiones — sigue fuera del MVP (ver back.md sección 5) — es solo texto que viaja en esta sala puntual.
   createdAt: number;          // timestamp epoch ms
 }
 ```
@@ -193,7 +229,7 @@ y votó**, no de algo decidido de antemano por el host.
 
 | Evento | Payload | Quién puede emitirlo | Descripción |
 |---|---|---|---|
-| `room:create` | `{ hostName: string, starsPerParticipant?: number, secondsPerSpeaker?: number, avatarId?: string }` | Cualquiera (se vuelve host) | Crea una sala nueva. `starsPerParticipant` define cuántas estrellas tiene cada participante para repartir en el Nivel 5 (Ranking de estrellas) (mínimo 1, máximo 10). `secondsPerSpeaker` define cuántos segundos habla cada persona en el Nivel 4 antes de rotar (mínimo 30, máximo 300). Si no se envían, el servidor aplica los valores por defecto (`3` y `60` respectivamente). `avatarId` es opcional (ver `AVATAR_IDS` en sección 1); si no se envía o no es válido, queda `null`. El servidor genera `code` y responde con `room:created`. |
+| `room:create` | `{ hostName: string, starsPerParticipant?: number, secondsPerSpeaker?: number, avatarId?: string, previousActionNotes?: string }` | Cualquiera (se vuelve host) | Crea una sala nueva. `starsPerParticipant` define cuántas estrellas tiene cada participante para repartir en el Nivel 5 (Ranking de estrellas) (mínimo 1, máximo 10). `secondsPerSpeaker` define cuántos segundos habla cada persona en el Nivel 4 antes de rotar (mínimo 30, máximo 300). Si no se envían, el servidor aplica los valores por defecto (`5` y `60` respectivamente). `avatarId` es opcional (ver `AVATAR_IDS` en sección 1); si no se envía o no es válido, queda `null`. `previousActionNotes` es texto libre opcional (máximo 2000 caracteres tras `.trim()`) mostrado en el Nivel 2; si no se envía, queda `""`. El servidor genera `code` y responde con `room:created`. |
 | `room:join` | `{ code: string, name: string, avatarId?: string }` | Cualquiera | Une al participante a una sala existente en estado `waiting_room` o ya iniciada. `avatarId` es opcional (ver `AVATAR_IDS` en sección 1); si no se envía o no es válido, queda `null`. |
 | `phase:start_session` | `{}` | Solo host | Pasa de `waiting_room` a `welcome`, arranca el flujo. |
 | `phase:advance` | `{}` | Solo host | Cierra la fase actual y avanza a la siguiente. |
@@ -252,12 +288,26 @@ un servidor lleno (ver front.md, estado de conexión `SERVER_FULL`).
 
 ## 4. Manejo de reconexión
 
-- Si un participante recarga la página o se desconecta brevemente, el cliente debe guardar
-  `code` y su `participantId` (por ejemplo en memoria de la sesión del navegador, no en
-  `localStorage` según las restricciones del proyecto — ver `front.md`) para reintentar el join
-  automáticamente a la misma sala.
+- Si un participante recarga la página (F5) o se desconecta brevemente, el cliente guarda
+  `{ code, name, avatarId }` en `sessionStorage` (excepción puntual a la restricción de Storage de
+  `front.md` — solo este mínimo, nunca el estado completo de la sala) para reintentar el
+  `room:join` automáticamente a la misma sala sin volver a pedirle el nombre a la persona usuaria.
+  Se limpia al salir explícitamente de la sala (`room:leave`) o si el servidor responde
+  `room:not_found` para ese código.
+- La identidad reutiliza el mismo `room:join` de siempre — el servidor la matchea por `name` entre
+  los participantes desconectados de esa sala (ver `roomHandlers.js`), no hace falta ningún evento
+  nuevo para la reconexión.
 - El servidor mantiene al participante en `RoomState.participants` con `connected: false` por un
   tiempo de gracia (sugerido: 5 minutos) antes de removerlo definitivamente, para tolerar cortes
   de red cortos sin perder su nombre ni sus votos previos.
 - Si el **host** se desconecta, la sala sigue viva pero sin nadie que pueda avanzar fases hasta
   que reconecte. No se reasigna el rol de host automáticamente en el MVP (posible mejora futura).
+
+## 5. Link de invitación
+
+- Ruta de frontend `/join/:code`: mismo formulario de "Unirse a sala" pero saltea el paso 1
+  (código) porque ya viaja en la URL — arranca directo en el paso 2 (nombre + avatar). No agrega
+  ningún evento de socket nuevo.
+- En "Insertar moneda" (sala de espera), el host y cualquier participante ya unido puede copiar
+  este link (`{origin}/join/{code}`) con un botón dedicado, para compartirlo por fuera de la app
+  (chat del equipo, etc.) en vez de dictar el código a viva voz.

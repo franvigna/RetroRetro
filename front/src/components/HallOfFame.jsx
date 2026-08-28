@@ -1,4 +1,5 @@
 import { topVotedCards } from "../domain/topVotedCards.js";
+import { getAvatarById } from "../domain/avatars.js";
 
 // Podio de solo lectura del Nivel 6 (Salón de la Fama): las tarjetas más
 // votadas de toda la sesión, calculadas 100% en base a `cards` (ver
@@ -19,18 +20,24 @@ export function HallOfFame({ cards, participantsById }) {
 
   return (
     <ul className="hall-of-fame">
-      {top.map((card, index) => (
-        <li key={card.id} className="hof-item" data-rank={index === 0 ? "1" : index === 1 ? "2" : "3"}>
-          <span className="hof-rank">{index + 1}º</span>
-          <div className="hof-body">
-            <span className="card-item-text">{card.text}</span>
-            <div className="card-item-footer">
-              <span>{participantsById[card.authorId]?.name || "Anónimo"}</span>
-              <span>★ {card.votes.length}</span>
+      {top.map((card, index) => {
+        const authorAvatar = getAvatarById(participantsById[card.authorId]?.avatarId);
+        return (
+          <li key={card.id} className="hof-item" data-rank={index === 0 ? "1" : index === 1 ? "2" : "3"}>
+            <span className="hof-rank">{index + 1}º</span>
+            <div className="hof-body">
+              <span className="card-item-text">{card.text}</span>
+              <div className="card-item-footer">
+                <span className="card-item-author">
+                  {authorAvatar && <img src={authorAvatar.src} alt="" width="18" height="18" className="participant-avatar" />}
+                  {participantsById[card.authorId]?.name || "Anónimo"}
+                </span>
+                <span>★ {card.votes.length}</span>
+              </div>
             </div>
-          </div>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ul>
   );
 }

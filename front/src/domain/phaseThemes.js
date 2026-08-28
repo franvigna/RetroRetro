@@ -121,4 +121,10 @@ export const COLUMN_PROMPTS = {
 
 export const MIN_STARS_PER_PARTICIPANT = 1;
 export const MAX_STARS_PER_PARTICIPANT = 10;
-export const DEFAULT_STARS_PER_PARTICIPANT = 3;
+export const DEFAULT_STARS_PER_PARTICIPANT = 5;
+
+// Nivel 2 (previous_action) — texto libre opcional que el host pega al crear
+// la sala (ej: acciones concretas copiadas del Game Over de la retro
+// anterior). Debe coincidir con PREVIOUS_ACTION_NOTES_MAX_LENGTH en
+// back/src/domain/room.js.
+export const PREVIOUS_ACTION_NOTES_MAX_LENGTH = 2000;

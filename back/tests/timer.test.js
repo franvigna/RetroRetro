@@ -59,13 +59,25 @@ describe("addTime", () => {
     expect(result.status).toBe("paused");
   });
 
-  it("rechaza sumar tiempo a un timer idle o finished", () => {
+  it("rechaza sumar tiempo a un timer idle", () => {
     expect(() => addTime({ status: "idle", durationSeconds: 0, remainingSeconds: 0 }, 60)).toThrow(
       InvalidActionError
     );
-    expect(() =>
-      addTime({ status: "finished", durationSeconds: 60, remainingSeconds: 0 }, 60)
-    ).toThrow(InvalidActionError);
+  });
+
+  it("suma segundos a un timer finished y lo reactiva a running (botón +5 min del aviso de alarma)", () => {
+    const timer = { status: "finished", durationSeconds: 60, remainingSeconds: 0 };
+    const result = addTime(timer, 300);
+    expect(result.durationSeconds).toBe(360);
+    expect(result.remainingSeconds).toBe(300);
+    expect(result.status).toBe("running");
+  });
+
+  it("restar tiempo a un timer finished lo deja en 0 sin reactivarlo", () => {
+    const timer = { status: "finished", durationSeconds: 60, remainingSeconds: 0 };
+    const result = addTime(timer, -60);
+    expect(result.remainingSeconds).toBe(0);
+    expect(result.status).toBe("finished");
   });
 
   it("rechaza seconds igual a cero", () => {

@@ -1,4 +1,5 @@
 import { formatTime } from "../utils/formatTime.js";
+import { getAvatarById } from "../domain/avatars.js";
 
 // Lista de participantes del Nivel 4 (Turno de jugador / expression_round).
 // Sin tarjetas ni formularios: es un apoyo visual a una conversación hablada
@@ -30,8 +31,10 @@ export function SpeakerList({ participants, currentSpeakerId, speakerTimer, isHo
     <ul className="speaker-list">
       {participants.map((p) => {
         const isSpeaking = p.id === currentSpeakerId;
+        const avatar = getAvatarById(p.avatarId);
         const content = (
           <>
+            {avatar && <img src={avatar.src} alt="" width="20" height="20" className="participant-avatar" />}
             <span className="speaker-item-name">{p.name}</span>
             {p.role === "host" && <span className="participant-badge">HOST</span>}
             {isSpeaking && speakerTimer && (

@@ -11,6 +11,7 @@ import { SpeakerList } from "../components/SpeakerList.jsx";
 import { HallOfFame } from "../components/HallOfFame.jsx";
 import { TimerFinishedBanner } from "../components/TimerFinishedBanner.jsx";
 import { SpeakerRotationWarning } from "../components/SpeakerRotationWarning.jsx";
+import { PreviousActionPanel } from "../components/PreviousActionPanel.jsx";
 import { PHASE_THEMES, CARD_COLUMNS_BY_PHASE } from "../domain/phaseThemes.js";
 
 const SPEAKER_ROTATION_WARNING_THRESHOLD_SECONDS = 5;
@@ -44,9 +45,13 @@ export function ActivePhasePage() {
   const isExpressionRound = room.phase === "expression_round";
   const columnsForPhase = CARD_COLUMNS_BY_PHASE[room.phase];
   const isVotingPhase = room.phase === "grouping_voting";
-  // En grouping_voting se muestran las columnas de keep_improve_try en modo
-  // solo-lectura + estrella (las cards ya fueron creadas en el nivel anterior).
-  const columnsToShow = isVotingPhase ? CARD_COLUMNS_BY_PHASE.keep_improve_try : columnsForPhase;
+  // En grouping_voting y expression_round se muestran las columnas de
+  // keep_improve_try ya escritas en el nivel anterior — sin voto en
+  // expression_round (todavía no llegamos a esa fase), con voto en
+  // grouping_voting. En ambos casos no se pueden agregar tarjetas nuevas,
+  // solo editar/eliminar las propias (ver onEditCard/onDeleteCard más abajo).
+  const showsPastCards = isVotingPhase || isExpressionRound;
+  const columnsToShow = showsPastCards ? CARD_COLUMNS_BY_PHASE.keep_improve_try : columnsForPhase;
 
   // Envuelve voteCard para animar "la estrella viaja" entre el header de
   // estrellas disponibles y la tarjeta votada (HU-F08b). El toggle real de
@@ -98,13 +103,7 @@ export function ActivePhasePage() {
           </p>
         )}
 
-        {room.phase === "previous_action" && (
-          <p>
-            Antes de arrancar: un momento para repasar entre todos qué quedó pendiente de la
-            última partida, si la hubo. No hay tarjetas en este nivel — es solo una pausa para
-            alinear al equipo antes de seguir jugando.
-          </p>
-        )}
+        {room.phase === "previous_action" && <PreviousActionPanel notes={room.previousActionNotes} />}
 
         {isExpressionRound && (
           <>
@@ -144,7 +143,7 @@ export function ActivePhasePage() {
                 cards={room.cards.filter((c) => c.column === column)}
                 participantsById={participantsById}
                 participants={room.participants}
-                canAddCard={!isVotingPhase && columnsForPhase?.includes(column)}
+                canAddCard={!showsPastCards && columnsForPhase?.includes(column)}
                 showVote={isVotingPhase}
                 currentParticipantId={currentParticipantId}
                 remainingVotes={remainingVotes}

@@ -59,57 +59,45 @@ describe("addCard", () => {
 
   it("rechaza agregar tarjetas durante hall_of_fame (vista automática de solo lectura)", () => {
     const room = makeRoom("hall_of_fame");
-    expect(() => addCard(room, { column: "action_plan", title: "algo", authorId: "p1", cardId: "c1" })).toThrow(
+    expect(() => addCard(room, { column: "action_plan", text: "algo", authorId: "p1", cardId: "c1" })).toThrow(
       InvalidActionError
     );
   });
 
-  it("action_plan usa title/description/assigneeIds en vez de text", () => {
+  it("action_plan usa text/assigneeIds", () => {
     const room = makeRoom("action_plan", [], { participants: [{ id: "p1" }, { id: "p2" }] });
     const result = addCard(room, {
       column: "action_plan",
-      title: "Migrar a TypeScript",
-      description: "Empezar por los módulos nuevos",
+      text: "Migrar a TypeScript",
       assigneeIds: ["p1", "p2"],
       authorId: "p1",
       cardId: "c1",
     });
     expect(result.cards[0]).toMatchObject({
       column: "action_plan",
-      title: "Migrar a TypeScript",
-      description: "Empezar por los módulos nuevos",
+      text: "Migrar a TypeScript",
       assigneeIds: ["p1", "p2"],
     });
-    expect(result.cards[0].text).toBeUndefined();
   });
 
-  it("action_plan rechaza title vacío", () => {
+  it("action_plan rechaza text vacío", () => {
     const room = makeRoom("action_plan");
     expect(() =>
-      addCard(room, { column: "action_plan", title: "  ", authorId: "p1", cardId: "c1" })
+      addCard(room, { column: "action_plan", text: "  ", authorId: "p1", cardId: "c1" })
     ).toThrow(InvalidActionError);
   });
 
-  it("action_plan rechaza title de más de 512 caracteres", () => {
+  it("action_plan rechaza text de más de 512 caracteres", () => {
     const room = makeRoom("action_plan");
-    const title = "a".repeat(CARD_TEXT_MAX_LENGTH + 1);
-    expect(() => addCard(room, { column: "action_plan", title, authorId: "p1", cardId: "c1" })).toThrow(
+    const text = "a".repeat(CARD_TEXT_MAX_LENGTH + 1);
+    expect(() => addCard(room, { column: "action_plan", text, authorId: "p1", cardId: "c1" })).toThrow(
       InvalidActionError
     );
   });
 
-  it("action_plan rechaza description de más de 512 caracteres", () => {
+  it("action_plan acepta sin assigneeIds (opcional)", () => {
     const room = makeRoom("action_plan");
-    const description = "a".repeat(CARD_TEXT_MAX_LENGTH + 1);
-    expect(() =>
-      addCard(room, { column: "action_plan", title: "Algo", description, authorId: "p1", cardId: "c1" })
-    ).toThrow(InvalidActionError);
-  });
-
-  it("action_plan acepta sin description ni assigneeIds (ambos opcionales)", () => {
-    const room = makeRoom("action_plan");
-    const result = addCard(room, { column: "action_plan", title: "Algo", authorId: "p1", cardId: "c1" });
-    expect(result.cards[0].description).toBe("");
+    const result = addCard(room, { column: "action_plan", text: "Algo", authorId: "p1", cardId: "c1" });
     expect(result.cards[0].assigneeIds).toEqual([]);
   });
 
@@ -118,7 +106,7 @@ describe("addCard", () => {
     expect(() =>
       addCard(room, {
         column: "action_plan",
-        title: "Algo",
+        text: "Algo",
         assigneeIds: ["p1", "fantasma"],
         authorId: "p1",
         cardId: "c1",
@@ -282,18 +270,17 @@ describe("editCard", () => {
     expect(result.cards[0].votes).toEqual(["p2"]);
   });
 
-  it("permite al autor editar título/descripción/assigneeIds de una action_plan", () => {
+  it("permite al autor editar texto/assigneeIds de una action_plan", () => {
     const room = makeRoom("action_plan", [
-      { id: "c1", column: "action_plan", title: "original", description: "", assigneeIds: [], authorId: "p1", votes: [] },
+      { id: "c1", column: "action_plan", text: "original", assigneeIds: [], authorId: "p1", votes: [] },
     ], { participants: [{ id: "p1" }, { id: "p2" }] });
     const result = editCard(room, {
       cardId: "c1",
-      title: "editado",
-      description: "nueva desc",
+      text: "editado",
       assigneeIds: ["p2"],
       participantId: "p1",
     });
-    expect(result.cards[0]).toMatchObject({ title: "editado", description: "nueva desc", assigneeIds: ["p2"] });
+    expect(result.cards[0]).toMatchObject({ text: "editado", assigneeIds: ["p2"] });
   });
 
   it("rechaza editar una tarjeta inexistente", () => {

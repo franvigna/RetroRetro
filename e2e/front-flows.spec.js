@@ -23,6 +23,32 @@ test("E2E-F02: un segundo usuario se une (código en paso 1, nombre en paso 2) y
   await participantContext.close();
 });
 
+test("E2E-F02b: el link de invitación copiado lleva directo al paso 2 (nombre) con el código precargado", async ({ browser }) => {
+  const hostContext = await browser.newContext({ permissions: ["clipboard-read", "clipboard-write"] });
+  const hostPage = await hostContext.newPage();
+  const code = await createRoomAsHost(hostPage, { hostName: "Cisco" });
+
+  await hostPage.getByRole("button", { name: /Copiar link para invitar/ }).click();
+  await expect(hostPage.getByRole("button", { name: "¡Copiado!" })).toBeVisible();
+  const inviteUrl = await hostPage.evaluate(() => navigator.clipboard.readText());
+  expect(inviteUrl).toContain(`/join/${code}`);
+
+  const participantContext = await browser.newContext();
+  const participantPage = await participantContext.newPage();
+  await participantPage.goto(inviteUrl);
+
+  // El paso 1 (código) se saltea: va directo al paso 2 con el código de la URL.
+  await expect(participantPage.getByLabel("Código de sala")).not.toBeVisible();
+  await participantPage.getByLabel("Tu nombre").fill("Ana");
+  await participantPage.getByRole("button", { name: "▶ Entrar" }).click();
+  await participantPage.waitForURL(`**/room/${code}`);
+
+  await expect(hostPage.getByText("Ana")).toBeVisible();
+
+  await hostContext.close();
+  await participantContext.close();
+});
+
 test("E2E-F03: el host inicia la partida y ambos ven el Nivel 1 al mismo tiempo", async ({ browser }) => {
   const hostContext = await browser.newContext();
   const hostPage = await hostContext.newPage();
@@ -355,7 +381,7 @@ test("E2E-F10: Salón de la Fama muestra automáticamente la tarjeta más votada
   await participantContext.close();
 });
 
-test("E2E-F11: flujo completo de punta a punta hasta Game Over, con action_plan título/descripción/responsables", async ({ browser }) => {
+test("E2E-F11: flujo completo de punta a punta hasta Game Over, con action_plan (acción concreta + responsables)", async ({ browser }) => {
   const hostContext = await browser.newContext();
   const hostPage = await hostContext.newPage();
   const code = await createRoomAsHost(hostPage, { hostName: "Cisco" });
@@ -390,18 +416,16 @@ test("E2E-F11: flujo completo de punta a punta hasta Game Over, con action_plan 
   await advancePhase(hostPage); // action_plan
   await expect(hostPage.locator(".brand-tagline").getByText("Guardar partida")).toBeVisible();
   await addActionPlanCard(hostPage, {
-    title: "Hacer retro de arquitectura",
-    description: "Agendar para la próxima semana",
+    text: "Hacer retro de arquitectura la próxima semana",
     assigneeLabel: "Ana",
   });
-  await expect(hostPage.getByText("Hacer retro de arquitectura")).toBeVisible();
+  await expect(hostPage.getByText("Hacer retro de arquitectura la próxima semana")).toBeVisible();
   await expect(hostPage.getByText("Responsables: Ana")).toBeVisible();
 
   await advancePhase(hostPage); // closing
 
   await expect(hostPage.getByText("GAME OVER")).toBeVisible();
-  await expect(hostPage.getByText("Hacer retro de arquitectura")).toBeVisible();
-  await expect(hostPage.getByText("Agendar para la próxima semana")).toBeVisible();
+  await expect(hostPage.getByText("Hacer retro de arquitectura la próxima semana")).toBeVisible();
   await expect(participantPage.getByText("GAME OVER")).toBeVisible();
 
   await hostContext.close();

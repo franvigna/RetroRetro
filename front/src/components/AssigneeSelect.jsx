@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getAvatarById } from "../domain/avatars.js";
 
 // Multi-select de responsables para una tarjeta de action_plan: un botón que
 // despliega la lista de participantes (checkboxes) recién al tocarlo, en vez
@@ -62,12 +63,16 @@ export function AssigneeSelect({ participants, selectedIds, onChange }) {
             <input type="checkbox" checked={allSelected} onChange={toggleAll} />
             <span>Todo el equipo</span>
           </label>
-          {participants.map((p) => (
-            <label key={p.id} className="assignee-option">
-              <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggle(p.id)} />
-              <span>{p.name}</span>
-            </label>
-          ))}
+          {participants.map((p) => {
+            const avatar = getAvatarById(p.avatarId);
+            return (
+              <label key={p.id} className="assignee-option">
+                <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggle(p.id)} />
+                {avatar && <img src={avatar.src} alt="" width="18" height="18" className="participant-avatar" />}
+                <span>{p.name}</span>
+              </label>
+            );
+          })}
         </div>
       )}
     </div>

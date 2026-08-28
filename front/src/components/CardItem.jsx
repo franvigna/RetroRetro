@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { VoteButton } from "./VoteButton.jsx";
 import { ActionPlanForm } from "./ActionPlanForm.jsx";
+import { getAvatarById } from "../domain/avatars.js";
 
-// keep/improve/try usan `card.text`; action_plan usa `title`/`description`/
-// `assigneeIds` (ver shared-contract.md sección 1) — este componente resuelve
-// los nombres de los responsables a partir de `participantsById` porque
-// `assigneeIds` solo trae ids, nunca nombres.
+// Todas las columnas usan `card.text`; action_plan además usa `assigneeIds`
+// (ver shared-contract.md sección 1) — este componente resuelve los nombres
+// de los responsables a partir de `participantsById` porque `assigneeIds`
+// solo trae ids, nunca nombres.
 //
 // Edición/eliminación (HU-F09c): solo visibles si `isOwn` (soy el autor).
 // Lápiz o doble click habilitan edición inline; "X" elimina sin confirmación.
@@ -28,6 +29,7 @@ export function CardItem({
   const assigneeNames = isActionPlan
     ? (card.assigneeIds || []).map((id) => participantsById?.[id]?.name || "?")
     : [];
+  const authorAvatar = getAvatarById(participantsById?.[card.authorId]?.avatarId);
 
   const canEdit = isOwn && Boolean(onEdit) && Boolean(onDelete);
 
@@ -55,7 +57,7 @@ export function CardItem({
       <li className="card-item card-item-editing">
         <ActionPlanForm
           participants={participants || []}
-          initialValues={{ title: card.title, description: card.description, assigneeIds: card.assigneeIds }}
+          initialValues={{ text: card.text, assigneeIds: card.assigneeIds }}
           submitLabel="Guardar"
           onSubmit={handleActionPlanEditSubmit}
         />
@@ -113,8 +115,7 @@ export function CardItem({
 
       {isActionPlan ? (
         <>
-          <span className="card-item-title">{card.title}</span>
-          {card.description && <span className="card-item-text">{card.description}</span>}
+          <span className="card-item-title">{card.text}</span>
           {assigneeNames.length > 0 && (
             <span className="card-item-assignees">Responsables: {assigneeNames.join(", ")}</span>
           )}
@@ -123,7 +124,10 @@ export function CardItem({
         <span className="card-item-text">{card.text}</span>
       )}
       <div className="card-item-footer">
-        <span>{authorName || "Anónimo"}</span>
+        <span className="card-item-author">
+          {authorAvatar && <img src={authorAvatar.src} alt="" width="18" height="18" className="participant-avatar" />}
+          {authorName || "Anónimo"}
+        </span>
         {showVote ? (
           <VoteButton
             voted={voted}

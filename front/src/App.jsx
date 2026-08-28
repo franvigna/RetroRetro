@@ -15,6 +15,7 @@ function AppShell() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/create" element={<CreateRoomPage />} />
         <Route path="/join" element={<JoinRoomPage />} />
+        <Route path="/join/:code" element={<JoinRoomPage />} />
         <Route path="/room/:code" element={<RoomPage />} />
       </Routes>
     </>

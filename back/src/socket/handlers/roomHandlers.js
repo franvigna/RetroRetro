@@ -5,28 +5,32 @@ import * as roomStore from "../../rooms/roomStore.js";
 import { stopTimerLoop, stopSpeakerTimerLoop } from "../timerLoop.js";
 
 export function registerRoomHandlers(io, socket, { broadcastRoomState, emitError }) {
-  socket.on("room:create", ({ hostName, phaseDurations, starsPerParticipant, secondsPerSpeaker, avatarId } = {}) => {
-    try {
-      const code = generateRoomCode((c) => roomStore.has(c));
-      const room = createRoom({
-        code,
-        hostId: socket.id,
-        hostName,
-        phaseDurations,
-        starsPerParticipant,
-        secondsPerSpeaker,
-        avatarId,
-        now: Date.now(),
-      });
-      roomStore.set(code, room);
-      socket.join(code);
-      socket.data.code = code;
-      socket.data.participantId = socket.id;
-      socket.emit("room:created", { code, room });
-    } catch (err) {
-      emitError(socket, "room:create", err);
+  socket.on(
+    "room:create",
+    ({ hostName, phaseDurations, starsPerParticipant, secondsPerSpeaker, avatarId, previousActionNotes } = {}) => {
+      try {
+        const code = generateRoomCode((c) => roomStore.has(c));
+        const room = createRoom({
+          code,
+          hostId: socket.id,
+          hostName,
+          phaseDurations,
+          starsPerParticipant,
+          secondsPerSpeaker,
+          avatarId,
+          previousActionNotes,
+          now: Date.now(),
+        });
+        roomStore.set(code, room);
+        socket.join(code);
+        socket.data.code = code;
+        socket.data.participantId = socket.id;
+        socket.emit("room:created", { code, room });
+      } catch (err) {
+        emitError(socket, "room:create", err);
+      }
     }
-  });
+  );
 
   socket.on("room:join", ({ code, name, avatarId } = {}) => {
     const room = roomStore.get(code);

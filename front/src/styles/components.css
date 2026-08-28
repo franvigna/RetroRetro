@@ -185,15 +185,19 @@
 }
 
 .field input[type="text"],
-.field input[type="number"] {
+.field input[type="number"],
+.field textarea {
   background: var(--color-bg-alt);
   border: var(--border-width-thin) solid var(--color-border);
   color: var(--color-text);
   padding: 0.7rem 0.8rem;
   font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
 }
 
-.field input:focus {
+.field input:focus,
+.field textarea:focus {
   border-color: var(--color-cyan);
 }
 
@@ -285,6 +289,7 @@
   border: var(--border-width-thin) dashed var(--color-cyan);
   padding: 0.75rem 1.25rem;
   text-align: center;
+  margin-bottom: 0.9rem;
 }
 
 .participant-list {
@@ -405,6 +410,16 @@
   border-left-color: var(--color-cyan);
 }
 
+.card-item-editing .btn-row {
+  flex-wrap: nowrap;
+}
+
+.card-item-editing .btn-row .btn {
+  flex: 1;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
 .card-item-actions {
   position: absolute;
   top: 0.4rem;
@@ -441,6 +456,12 @@
 .card-item-assignees {
   font-size: 0.78rem;
   color: var(--color-cyan);
+}
+
+.card-item-author {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .card-item-footer {
@@ -669,7 +690,7 @@
 
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -686,6 +707,8 @@
 }
 
 .avatar-option img {
+  width: 48px;
+  height: 48px;
   image-rendering: pixelated;
   transition: transform 0.15s ease;
 }
@@ -830,6 +853,36 @@
   font-family: var(--font-body);
   color: var(--color-text-dim);
   margin: 0.4rem 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+/* ===== Nivel 2 — repaso de la retro anterior ===== */
+.previous-action-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.previous-action-notes {
+  background: var(--color-bg-alt);
+  border-left: 4px solid var(--color-cyan);
+  padding: 0.8rem 1rem;
+}
+
+.previous-action-notes-label {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  color: var(--color-cyan);
+  margin: 0 0 0.5rem;
+}
+
+.previous-action-notes-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
 }
 
 /* ===== Salón de la Fama (Nivel 6) — ranking de solo lectura ===== */
@@ -894,12 +947,8 @@
   gap: 0.6rem;
 }
 
-.action-plan-field-title {
-  flex: 2 1 12rem;
-}
-
-.action-plan-field-description {
-  flex: 3 1 14rem;
+.action-plan-field-text {
+  flex: 3 1 16rem;
 }
 
 .action-plan-field-submit {

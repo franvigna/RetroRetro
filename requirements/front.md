@@ -86,10 +86,15 @@ en pantallas anchas, ni queda pegado a un costado.
    - Si sos host: controles de facilitación (avanzar nivel, volver, pausar/reanudar timer,
      +5 min, y en el Nivel 4 además el control de "marcar quién habla").
    - Si sos participante: solo el contenido interactivo de ese nivel, sin controles de sala.
-5. **Nivel 4 — Turno de jugador (Ronda de expresión)** — pantalla sin tarjetas ni formularios: se
-   muestra la lista de participantes, y quien el host marque como orador actual queda resaltado
-   visualmente para todos (ver HU-F08). Es un apoyo visual a una conversación que sucede fuera de
-   la app (por voz), no una mecánica de datos compleja.
+5. **Nivel 4 — Turno de jugador (Ronda de expresión)** — se muestra la lista de participantes, y
+   quien el host marque como orador actual queda resaltado visualmente para todos (ver HU-F08).
+   Debajo, se muestran también las columnas Keep/Improve/Try con **todas** las tarjetas ya
+   escritas en el Nivel 3 (de todo el equipo, no solo las propias — ver HU-F08b), en modo
+   **solo lectura sin votación** (sin botón de estrella, sin formulario para agregar tarjetas
+   nuevas), salvo que cada participante puede editar o eliminar únicamente sus propias tarjetas
+   (mismo mecanismo de lápiz/X que en el Nivel 3). El objetivo es dar soporte visual a la
+   conversación hablada de este nivel, mostrando de qué se está hablando sin permitir escribir
+   contenido nuevo todavía (eso llega recién en el Nivel 7).
 6. **Nivel 6 — Salón de la Fama** — pantalla de solo lectura (no se agregan tarjetas nuevas) que
    muestra automáticamente las 3 tarjetas con más estrellas de toda la sesión hasta ese momento,
    presentadas como el "podio" de la partida (ej: 1er, 2do y 3er lugar), para que el equipo las
@@ -118,10 +123,26 @@ en pantallas anchas, ni queda pegado a un costado.
 - **Entonces** el sistema me lleva a la pantalla "Insertar moneda" como host, mostrando un
   código de sala único para compartir.
 - **Detalle del selector:** control deslizable horizontal (arrastrar), rango de **1 a 10**,
-  valor por defecto **3**, mostrando el número seleccionado en todo momento mientras se arrastra
+  valor por defecto **5**, mostrando el número seleccionado en todo momento mientras se arrastra
   (no solo al soltar).
 - **Nota:** no hay ningún campo para definir un "tema" de antemano — el Nivel 6 (Salón de la
   Fama) se calcula solo, en base a lo que el equipo escriba y vote durante la sesión.
+- **Campo opcional "Plan de acción de la retro anterior":** textarea de texto libre (máximo 2000
+  caracteres) donde el host puede pegar, por ejemplo, las acciones concretas copiadas del Game
+  Over de la sesión anterior. Se muestra tal cual al equipo en el Nivel 2 (ver HU-F16b). No hay
+  ninguna validación de formato — es texto plano sin estructura, y queda vacío por defecto si no
+  se completa.
+
+**HU-F01b — Copiar un link para invitar participantes**
+> Como anfitrión (o cualquier participante ya en la sala), quiero copiar un link directo para
+> compartirlo por chat, en vez de dictar el código de sala a viva voz.
+- **Dado** que estoy en "Insertar moneda",
+- **Cuando** toco el botón "Copiar link para invitar",
+- **Entonces** se copia al portapapeles una URL del tipo `{origin}/join/{code}`, y el botón
+  confirma visualmente ("¡Copiado!") por un par de segundos.
+- **Y cuando** alguien abre ese link,
+- **Entonces** llega directo al paso 2 de "Unirse a sala" (nombre + personaje), sin tener que
+  tipear el código a mano — el paso 1 se saltea porque el código ya viene en la URL.
 
 **HU-F02 — Iniciar la partida desde la sala de espera**
 > Como anfitrión, quiero iniciar la partida cuando estén los participantes que necesito, para
@@ -173,7 +194,7 @@ en pantallas anchas, ni queda pegado a un costado.
   emitir `room:join` al final del paso 2 — decisión de implementación, no cambia el contrato).
 - **Paso 2 — Nombre y personaje:** una vez el código es válido, se muestra un campo de nombre
   **obligatorio** y una grilla de selección de personaje pixel-art **opcional** (ver
-  `AVATAR_IDS` en `shared-contract.md` sección 1 — 8 personajes 100% originales, ninguno
+  `AVATAR_IDS` en `shared-contract.md` sección 1 — 35 personajes 100% originales, ninguno
   referencia a franquicias de videojuegos reales).
 - **Dado** que estoy en el paso 2 con un código válido,
 - **Cuando** completo mi nombre (y opcionalmente toco un personaje para seleccionarlo — tocar de
@@ -191,8 +212,22 @@ en pantallas anchas, ni queda pegado a un costado.
 - **Dado** que estoy en el Nivel 4 (Turno de jugador),
 - **Cuando** el host marca a un participante como orador actual,
 - **Entonces** veo a esa persona resaltada visualmente en la lista, en tiempo real y sin recargar.
-- No hay ninguna acción que yo pueda hacer en esta pantalla salvo mirar quién habla — es un
-  apoyo visual a una conversación en vivo, no una mecánica interactiva para el participante.
+- La lista de oradores no tiene ninguna acción para el participante — es un apoyo visual a una
+  conversación en vivo, no una mecánica interactiva. La única interacción disponible en este
+  nivel para cualquier rol es sobre las tarjetas de Keep/Improve/Try (ver HU-F08b).
+
+**HU-F08b — Ver todas las tarjetas de Keep/Improve/Try durante la Ronda de expresión**
+> Como participante, quiero ver todo lo que escribió el equipo entero en el Nivel 3 mientras
+> estamos en la Ronda de expresión, para tener el contexto completo de la conversación — y poder
+> corregir mi propio aporte si me expreso mejor hablando que por escrito.
+- **Dado** que estoy en el Nivel 4 (Turno de jugador),
+- **Entonces** veo las columnas Keep/Improve/Try con las tarjetas de **todo el equipo** (ya no
+  solo las mías — el filtro de anti-anclaje del Nivel 3, ver HU-F09b, dejó de aplicar al
+  avanzar de fase).
+- **Y** no veo ningún botón de estrella en las tarjetas (todavía no llegamos al Nivel 5) ni
+  ningún formulario para agregar tarjetas nuevas en esta pantalla.
+- **Y** puedo tocar el lápiz para editar o la X para eliminar únicamente mis propias tarjetas
+  (mismo mecanismo que HU-F09c) — las de los demás se ven pero sin ningún control de edición.
 
 **HU-F09 — Agregar una tarjeta en el nivel correspondiente**
 > Como participante, quiero escribir una tarjeta de texto libre en la columna que corresponda
@@ -203,7 +238,8 @@ en pantallas anchas, ni queda pegado a un costado.
   excepción de visibilidad del Nivel 3 — ver HU-F09b), con mi nombre como autor.
 - **Y si** el texto está vacío, el sistema no permite enviarla y muestra por qué.
 - **Nota:** el Nivel 4 (Turno de jugador) y el Nivel 6 (Salón de la Fama) **no** admiten
-  tarjetas nuevas — el primero es un momento hablado, y el segundo es una vista automática de lo
+  tarjetas nuevas — el primero es un momento hablado (aunque sí muestra en solo lectura las
+  tarjetas ya escritas en el Nivel 3, ver HU-F08b), y el segundo es una vista automática de lo
   ya escrito y votado.
 - **Pregunta disparadora por columna:** cada columna de Keep/Improve/Try muestra, debajo del
   título, una pregunta corta para ayudar a arrancar a escribir sin tener que explicar la
@@ -268,14 +304,14 @@ en pantallas anchas, ni queda pegado a un costado.
   ordenadas de mayor a menor, sin poder agregar tarjetas nuevas en esta pantalla.
 
 **HU-F11b — Formulario horizontal del plan de acción, con responsables por desplegable**
-> Como participante, quiero completar título, descripción y responsables de una acción en una
-> misma fila, y elegir responsables desde un desplegable en vez de una lista fija siempre
-> visible, para que el formulario del Nivel 7 sea más compacto y rápido de usar.
+> Como participante, quiero completar la acción concreta y sus responsables en una misma fila, y
+> elegir responsables desde un desplegable en vez de una lista fija siempre visible, para que el
+> formulario del Nivel 7 sea más compacto y rápido de usar.
 - **Dado** que estoy en el Nivel 7 (Guardar partida),
 - **Cuando** veo el formulario de nueva tarjeta,
-- **Entonces** título, descripción y responsables se muestran en una misma fila horizontal (no
-  apilados verticalmente uno debajo del otro), adaptado a columnas en pantallas angostas según
-  la regla de layout responsivo obligatoria del proyecto.
+- **Entonces** el campo de acción concreta y los responsables se muestran en una misma fila
+  horizontal (no apilados verticalmente uno debajo del otro), adaptado a columnas en pantallas
+  angostas según la regla de layout responsivo obligatoria del proyecto.
 - **Y cuando** toco el campo de responsables,
 - **Entonces** se despliega la lista de participantes (con la opción "Todo el equipo") para
   elegir, y se cierra al elegir o al tocar afuera — no ocupa espacio fijo en la fila mientras no
@@ -287,9 +323,32 @@ en pantallas anchas, ni queda pegado a un costado.
 
 ### Transversales (ambos roles)
 
-**HU-F13 — Reconexión ante corte de red**
-> Como cualquier usuario, quiero que si se me corta la conexión y vuelvo a entrar, recupere mi
-> lugar en la sala (nombre, estrellas ya repartidas) en vez de tener que empezar de cero.
+**HU-F13 — Reconexión ante corte de red o refresh de página**
+> Como cualquier usuario, quiero que si se me corta la conexión, o recargo la página sin querer
+> (F5), recupere mi lugar en la sala (nombre, estrellas ya repartidas) en vez de tener que
+> empezar de cero.
+- El cliente guarda `{ code, name, avatarId }` en `sessionStorage` (única excepción admitida a la
+  restricción de Storage de la sección 5 — nunca el estado de la sala en sí) al crear o unirse a
+  una sala, y lo usa para reintentar `room:join` automáticamente en cuanto el socket conecta,
+  sin volver a pedirle nada a la persona usuaria.
+- Mientras ese auto-join está en curso, se muestra una pantalla de "Reconectando..." — nunca el
+  formulario de nombre, que solo aparece si no hay identidad guardada para recuperar (ej: alguien
+  entra por primera vez a la URL de una sala vía el link de otra persona).
+- Si la sala guardada ya no existe (`room:not_found`), se limpia la identidad guardada para no
+  reintentar en loop, y recién ahí se pide el nombre manualmente.
+
+**HU-F16b — Nivel 2: repaso de la retro anterior**
+> Como participante, quiero ver el resumen que el anfitrión cargó de la retro anterior al crear
+> la sala, para retomar el hilo de lo que quedó pendiente antes de arrancar esta.
+- **Dado** que la sesión llega al Nivel 2 (`previous_action`),
+- **Cuando** se muestra la pantalla,
+- **Entonces** veo el texto libre que el host cargó en "Crear sala" (si cargó alguno), mostrado
+  tal cual, respetando saltos de línea.
+- **Y si** el host no cargó nada,
+- **Entonces** veo un mensaje claro indicando que no hay ningún pendiente cargado para esta
+  sesión, en vez de una pantalla vacía o confusa.
+- No hay ninguna tarjeta ni votación en este nivel — es solo lectura, para dar pie a la
+  conversación oral del equipo.
 
 **HU-F14 — Indicador de "conectando"**
 > Como cualquier usuario, quiero ver un indicador claro cuando la app está estableciendo
@@ -309,11 +368,13 @@ en pantallas anchas, ni queda pegado a un costado.
 
 ## 5. Restricciones técnicas específicas del frontend
 
-- **Prohibido usar `localStorage` o `sessionStorage`** para nada relacionado con estado de la
-  sala — usar estado de React (Context o estado local) y, para sobrevivir un refresh de página,
-  guardar el mínimo necesario (código de sala + nombre) de la forma más simple posible dentro de
-  las restricciones del entorno de desarrollo/deploy elegido. Si esto genera dudas al momento de
-  implementarlo, preguntar antes de asumir una solución.
+- **Prohibido usar `localStorage` o `sessionStorage` para el estado de la sala** (fases, timer,
+  tarjetas, votos, etc.) — eso vive únicamente en memoria de React (Context), reflejando siempre
+  lo último recibido en `room:state`. **Única excepción admitida:** `sessionStorage` guarda el
+  mínimo necesario para sobrevivir un refresh de página (HU-F13) — `{ code, name, avatarId }` —,
+  nunca `localStorage` (que sobreviviría entre pestañas/sesiones distintas, lo cual no es
+  deseable acá). Se limpia al salir explícitamente de la sala o si el código guardado ya no
+  existe.
 - El cliente debe manejar explícitamente los tres estados de conexión del socket: conectando,
   conectado, desconectado — con feedback visual en los tres casos, idealmente integrado a la
   estética (ej: pantalla de "loading level...").
@@ -372,6 +433,8 @@ en pantallas anchas, ni queda pegado a un costado.
   (ej: 5) usando el selector, ve el código generado, y queda en "Insertar moneda" como host.
 - **E2E-F02:** un segundo usuario se une con ese código y aparece en la lista de participantes
   del primero, en tiempo real.
+- **E2E-F02b:** el host copia el link de invitación desde "Insertar moneda"; un segundo usuario
+  abre ese link y llega directo al paso 2 (nombre), sin tipear el código.
 - **E2E-F03:** el host inicia la partida y ambos usuarios ven la transición al Nivel 1 al mismo
   tiempo.
 - **E2E-F04:** el host avanza de nivel y el participante ve el cambio sin recargar la página.

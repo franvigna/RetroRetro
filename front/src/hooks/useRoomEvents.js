@@ -13,13 +13,13 @@ export function useRoomEvents() {
   const pauseTimer = useCallback(() => socket.emit("timer:pause"), [socket]);
   const resumeTimer = useCallback(() => socket.emit("timer:resume"), [socket]);
   const addTime = useCallback((seconds) => socket.emit("timer:add_time", { seconds }), [socket]);
-  // keep/improve/try: (column, text). action_plan: (column, { title, description, assigneeIds }) —
+  // keep/improve/try: (column, text). action_plan: (column, { text, assigneeIds }) —
   // ver CardColumn.jsx, que arma el payload correcto según la columna.
   const addCard = useCallback(
     (column, payload) => {
       if (column === "action_plan") {
-        const { title, description, assigneeIds } = payload;
-        socket.emit("card:add", { column, title, description, assigneeIds });
+        const { text, assigneeIds } = payload;
+        socket.emit("card:add", { column, text, assigneeIds });
       } else {
         socket.emit("card:add", { column, text: payload });
       }
@@ -27,13 +27,13 @@ export function useRoomEvents() {
     [socket]
   );
   const voteCard = useCallback((cardId) => socket.emit("card:vote", { cardId }), [socket]);
-  // Mismo shape dual que addCard: keep/improve/try manda text, action_plan
-  // manda title/description/assigneeIds (ver CardItem.jsx).
+  // Mismo shape dual que addCard: keep/improve/try manda text plano, action_plan
+  // manda { text, assigneeIds } (ver CardItem.jsx).
   const editCard = useCallback(
     (cardId, column, payload) => {
       if (column === "action_plan") {
-        const { title, description, assigneeIds } = payload;
-        socket.emit("card:edit", { cardId, title, description, assigneeIds });
+        const { text, assigneeIds } = payload;
+        socket.emit("card:edit", { cardId, text, assigneeIds });
       } else {
         socket.emit("card:edit", { cardId, text: payload });
       }

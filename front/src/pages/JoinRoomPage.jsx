@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useRoom } from "../context/RoomContext.jsx";
-// Avatares deshabilitados temporalmente (feedback: el set de sprites no
-// convence todavía) — queda como mejora futura, ver AvatarPicker.jsx.
-// import { AvatarPicker } from "../components/AvatarPicker.jsx";
+import { AvatarPicker } from "../components/AvatarPicker.jsx";
 
 const STEP_CODE = 0;
 const STEP_NAME = 1;
@@ -16,6 +14,7 @@ export function JoinRoomPage() {
   const [step, setStep] = useState(codeFromUrl ? STEP_NAME : STEP_CODE);
   const [code, setCode] = useState(codeFromUrl || "");
   const [name, setName] = useState("");
+  const [avatarId, setAvatarId] = useState(null);
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -53,7 +52,7 @@ export function JoinRoomPage() {
     e.preventDefault();
     setTouched(true);
     if (!name.trim()) return;
-    joinRoom(code.trim().toUpperCase(), name.trim());
+    joinRoom(code.trim().toUpperCase(), name.trim(), avatarId);
   }
 
   return (
@@ -111,6 +110,7 @@ export function JoinRoomPage() {
               />
               {nameError && <span className="field-error">Ingresá tu nombre.</span>}
             </div>
+            <AvatarPicker value={avatarId} onChange={setAvatarId} />
 
             <div className="btn-row">
               <button type="button" className="btn btn-ghost" onClick={handleBack}>

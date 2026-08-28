@@ -34,8 +34,11 @@ describe("useRemainingVotes (cálculo puro de presentación)", () => {
     expect(useRemainingVotes(room, "p1")).toBe(6);
   });
 
-  it("devuelve el default (3) si no hay room o participantId todavía", () => {
-    expect(useRemainingVotes(null, "p1")).toBe(3);
+  it("devuelve el default (5) si no hay room todavía", () => {
+    expect(useRemainingVotes(null, "p1")).toBe(5);
+  });
+
+  it("devuelve el starsPerParticipant de la room si no hay participantId todavía", () => {
     expect(useRemainingVotes(makeRoom([]), null)).toBe(3);
   });
 });

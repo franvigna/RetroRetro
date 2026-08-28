@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { playBeep } from "../utils/beep.js";
+import { getAvatarById } from "../domain/avatars.js";
 
 // Deriva quién habla después del orador actual, en el mismo orden que usa el
 // servidor en domain/turns.js: advanceSpeaker() (wraparound por índice en
@@ -18,6 +19,7 @@ function getNextSpeaker(participants, currentSpeakerId) {
 // Nivel 4").
 export function SpeakerRotationWarning({ participants, currentSpeakerId, remainingSeconds }) {
   const nextSpeaker = getNextSpeaker(participants, currentSpeakerId);
+  const nextAvatar = nextSpeaker ? getAvatarById(nextSpeaker.avatarId) : null;
 
   useEffect(() => {
     playBeep({ frequency: 660, durationMs: 120 });
@@ -26,7 +28,12 @@ export function SpeakerRotationWarning({ participants, currentSpeakerId, remaini
   return (
     <div className="speaker-rotation-warning" role="alert">
       <p className="speaker-rotation-countdown">{remainingSeconds}</p>
-      {nextSpeaker && <p className="speaker-rotation-next">Sigue: {nextSpeaker.name}</p>}
+      {nextSpeaker && (
+        <p className="speaker-rotation-next">
+          {nextAvatar && <img src={nextAvatar.src} alt="" width="20" height="20" className="participant-avatar" />}
+          Sigue: {nextSpeaker.name}
+        </p>
+      )}
     </div>
   );
 }

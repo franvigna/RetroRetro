@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { createMockSocket } from "../test/mockSocket.js";
 
 const mockSocket = createMockSocket();
@@ -57,7 +57,7 @@ describe("JoinRoomPage — flujo en dos pasos", () => {
     expect(mockSocket.emit).not.toHaveBeenCalledWith("room:join", expect.anything());
   });
 
-  it("emite room:join con código y nombre (avatarId siempre null, feature deshabilitada)", () => {
+  it("emite room:join con código y nombre, avatarId null si no se eligió ninguno", () => {
     renderPage();
     goToNameStep("retro-ab12");
     fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
@@ -70,11 +70,68 @@ describe("JoinRoomPage — flujo en dos pasos", () => {
     });
   });
 
+  it("emite room:join con el avatarId elegido", () => {
+    renderPage();
+    goToNameStep("retro-ab12");
+    fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
+    fireEvent.click(screen.getByLabelText("Gorra roja"));
+    fireEvent.click(screen.getByText(/Entrar/));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith("room:join", {
+      code: "RETRO-AB12",
+      name: "Ana",
+      avatarId: "gorra-roja-pecoso",
+    });
+  });
+
   it("permite volver del paso 2 al paso 1 con Atrás", () => {
     renderPage();
     goToNameStep();
     fireEvent.click(screen.getByText(/Atrás/));
     expect(screen.getByLabelText("Código de sala")).toBeInTheDocument();
     expect(screen.queryByLabelText("Tu nombre")).not.toBeInTheDocument();
+  });
+});
+
+describe("JoinRoomPage — código precargado por link de invitación (/join/:code)", () => {
+  beforeEach(() => {
+    mockSocket.emit.mockClear();
+    mockSocket.connected = true;
+  });
+
+  it("arranca directo en el paso 2 con el código de la URL, sin pedirlo de nuevo", () => {
+    render(
+      <MemoryRouter initialEntries={["/join/RETRO-AB12"]}>
+        <RoomProvider>
+          <Routes>
+            <Route path="/join/:code" element={<JoinRoomPage />} />
+          </Routes>
+        </RoomProvider>
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByLabelText("Código de sala")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Tu nombre")).toBeInTheDocument();
+  });
+
+  it("emite room:join con el código tomado de la URL", () => {
+    render(
+      <MemoryRouter initialEntries={["/join/RETRO-AB12"]}>
+        <RoomProvider>
+          <Routes>
+            <Route path="/join/:code" element={<JoinRoomPage />} />
+          </Routes>
+        </RoomProvider>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
+    fireEvent.click(screen.getByText(/Entrar/));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith("room:join", {
+      code: "RETRO-AB12",
+      name: "Ana",
+      avatarId: null,
+    });
   });
 });

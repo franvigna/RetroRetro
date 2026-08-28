@@ -3,9 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useRoom } from "../context/RoomContext.jsx";
 import { PhaseDurationInput } from "../components/PhaseDurationInput.jsx";
 import { StarsSliderInput } from "../components/StarsSliderInput.jsx";
-// Avatares deshabilitados temporalmente (feedback: el set de sprites no
-// convence todavía) — queda como mejora futura, ver AvatarPicker.jsx.
-// import { AvatarPicker } from "../components/AvatarPicker.jsx";
+import { AvatarPicker } from "../components/AvatarPicker.jsx";
 import { formatMinutesAsHours } from "../utils/formatTime.js";
 import {
   TIMED_PHASES,
@@ -16,6 +14,7 @@ import {
   DEFAULT_SECONDS_PER_SPEAKER,
   MIN_SECONDS_PER_SPEAKER,
   MAX_SECONDS_PER_SPEAKER,
+  PREVIOUS_ACTION_NOTES_MAX_LENGTH,
   minutesToSeconds,
 } from "../domain/phaseThemes.js";
 
@@ -33,6 +32,8 @@ export function CreateRoomPage() {
   const [durations, setDurations] = useState(() => ({ ...DEFAULT_DURATIONS_MINUTES }));
   const [starsPerParticipant, setStarsPerParticipant] = useState(DEFAULT_STARS_PER_PARTICIPANT);
   const [secondsPerSpeaker, setSecondsPerSpeaker] = useState(DEFAULT_SECONDS_PER_SPEAKER);
+  const [avatarId, setAvatarId] = useState(null);
+  const [previousActionNotes, setPreviousActionNotes] = useState("");
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -61,7 +62,14 @@ export function CreateRoomPage() {
     const phaseDurations = Object.fromEntries(
       TIMED_PHASES.map((phase) => [phase, minutesToSeconds(durations[phase])])
     );
-    createRoom({ hostName: hostName.trim(), phaseDurations, starsPerParticipant, secondsPerSpeaker });
+    createRoom({
+      hostName: hostName.trim(),
+      phaseDurations,
+      starsPerParticipant,
+      secondsPerSpeaker,
+      avatarId,
+      previousActionNotes: previousActionNotes.trim(),
+    });
   }
 
   return (
@@ -91,6 +99,7 @@ export function CreateRoomPage() {
               />
               {hostNameError && <span className="field-error">Ingresá tu nombre para continuar.</span>}
             </div>
+            <AvatarPicker value={avatarId} onChange={setAvatarId} />
             <button type="submit" className="btn btn-primary btn-block">
               Siguiente ▶
             </button>
@@ -143,6 +152,24 @@ export function CreateRoomPage() {
             <h2 className="cabinet-title">PASO 3</h2>
             <p className="cabinet-subtitle">Estrellas de puntaje</p>
             <StarsSliderInput value={starsPerParticipant} onChange={setStarsPerParticipant} />
+
+            <div className="field">
+              <label htmlFor="previousActionNotes">
+                Plan de acción de la retro anterior <span className="field-help">(opcional)</span>
+              </label>
+              <textarea
+                id="previousActionNotes"
+                rows={4}
+                value={previousActionNotes}
+                onChange={(e) => setPreviousActionNotes(e.target.value)}
+                placeholder="Pegá acá las acciones concretas de la última retro, para repasarlas en el Nivel 2."
+                maxLength={PREVIOUS_ACTION_NOTES_MAX_LENGTH}
+              />
+              <span className="field-help">
+                Texto libre — se muestra tal cual en el Nivel 2 al equipo. No se guarda entre sesiones.
+              </span>
+            </div>
+
             <div className="btn-row">
               <button type="button" className="btn btn-ghost" onClick={handleBack}>
                 ◀ Atrás

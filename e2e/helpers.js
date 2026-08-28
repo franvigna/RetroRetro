@@ -53,11 +53,8 @@ export async function setSpeaker(hostPage, name) {
   await hostPage.getByRole("button", { name }).click();
 }
 
-export async function addActionPlanCard(page, { title, description, assigneeLabel }) {
-  await page.getByLabel("Título").fill(title);
-  if (description) {
-    await page.getByLabel("Descripción (opcional)").fill(description);
-  }
+export async function addActionPlanCard(page, { text, assigneeLabel }) {
+  await page.getByLabel("Acción concreta").fill(text);
   if (assigneeLabel) {
     await page.getByLabel("Responsables").click();
     await page.getByLabel(assigneeLabel).check();

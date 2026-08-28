@@ -1,6 +1,7 @@
 import { useRoom } from "../context/RoomContext.jsx";
 import { useRoomEvents } from "../hooks/useRoomEvents.js";
 import { ParticipantList } from "../components/ParticipantList.jsx";
+import { CopyInviteLink } from "../components/CopyInviteLink.jsx";
 import { PHASE_THEMES } from "../domain/phaseThemes.js";
 
 export function WaitingRoomPage() {
@@ -20,6 +21,7 @@ export function WaitingRoomPage() {
         <div className="cabinet-bezel" />
         <p className="cabinet-subtitle">Código de sala</p>
         <p className="room-code">{room.code}</p>
+        <CopyInviteLink code={room.code} />
 
         <h2 className="cabinet-title" style={{ marginTop: "1.5rem" }}>
           JUGADORES

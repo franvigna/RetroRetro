@@ -56,11 +56,11 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
     expect(screen.getByRole("slider")).toBeInTheDocument();
   });
 
-  it("el slider de estrellas arranca en 3 y no permite valores fuera de 1-10", () => {
+  it("el slider de estrellas arranca en 5 y no permite valores fuera de 1-10", () => {
     renderPage();
     goToStarsStep();
     const slider = screen.getByRole("slider");
-    expect(slider).toHaveValue("3");
+    expect(slider).toHaveValue("5");
     expect(slider).toHaveAttribute("min", "1");
     expect(slider).toHaveAttribute("max", "10");
   });
@@ -91,18 +91,31 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
     );
     const payload = mockSocket.emit.mock.calls.find((call) => call[0] === "room:create")[1];
     expect(payload).not.toHaveProperty("focusTopic");
-    expect(payload).not.toHaveProperty("avatarId");
+    expect(payload.avatarId).toBeNull();
     expect(payload.phaseDurations).not.toHaveProperty("expression_round");
   });
 
-  it("crea la sala con el valor por defecto de estrellas (3) si no se toca el slider", () => {
+  it("emite room:create con el avatarId elegido en el paso 1", () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Cisco" } });
+    fireEvent.click(screen.getByLabelText("Gorra roja"));
+    goToStarsStep();
+    fireEvent.click(screen.getByText(/Crear sala/));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "room:create",
+      expect.objectContaining({ avatarId: "gorra-roja-pecoso" })
+    );
+  });
+
+  it("crea la sala con el valor por defecto de estrellas (5) si no se toca el slider", () => {
     renderPage();
     goToStarsStep();
     fireEvent.click(screen.getByText(/Crear sala/));
 
     expect(mockSocket.emit).toHaveBeenCalledWith(
       "room:create",
-      expect.objectContaining({ starsPerParticipant: 3 })
+      expect.objectContaining({ starsPerParticipant: 5 })
     );
   });
 
@@ -137,6 +150,31 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
     expect(mockSocket.emit).toHaveBeenCalledWith(
       "room:create",
       expect.objectContaining({ secondsPerSpeaker: 90 })
+    );
+  });
+
+  it("emite room:create con previousActionNotes vacío si no se completa el textarea", () => {
+    renderPage();
+    goToStarsStep();
+    fireEvent.click(screen.getByText(/Crear sala/));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "room:create",
+      expect.objectContaining({ previousActionNotes: "" })
+    );
+  });
+
+  it("emite room:create con el texto libre cargado en el paso 3 (Nivel 2)", () => {
+    renderPage();
+    goToStarsStep();
+    fireEvent.change(screen.getByLabelText(/Plan de acción de la retro anterior/), {
+      target: { value: "Documentar el proceso de deploy" },
+    });
+    fireEvent.click(screen.getByText(/Crear sala/));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "room:create",
+      expect.objectContaining({ previousActionNotes: "Documentar el proceso de deploy" })
     );
   });
 });

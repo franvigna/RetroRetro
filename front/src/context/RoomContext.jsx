@@ -11,6 +11,35 @@ export const CONNECTION_STATUS = {
   SERVER_FULL: "server_full",
 };
 
+// Excepción puntual admitida por front.md sección 5: el mínimo necesario
+// (código de sala + nombre) para sobrevivir un refresh de página, no para
+// estado de sala en general (eso sigue viviendo solo en memoria de React).
+const SESSION_STORAGE_KEY = "retroretro:identity";
+
+function loadStoredIdentity() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return { code: null, name: null, avatarId: null };
+    const parsed = JSON.parse(raw);
+    return { code: parsed.code ?? null, name: parsed.name ?? null, avatarId: parsed.avatarId ?? null };
+  } catch {
+    return { code: null, name: null, avatarId: null };
+  }
+}
+
+function storeIdentity(identity) {
+  try {
+    if (identity.code && identity.name) {
+      sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(identity));
+    } else {
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  } catch {
+    // sessionStorage puede no estar disponible (ej: modo privado estricto) —
+    // degradamos a solo-memoria sin romper el flujo.
+  }
+}
+
 export function RoomProvider({ children }) {
   const [room, setRoom] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState(CONNECTION_STATUS.CONNECTING);
@@ -20,9 +49,10 @@ export function RoomProvider({ children }) {
 
   // Guardamos el nombre usado en el último room:join/room:create para poder
   // reintentar la reconexión si el socket se reconecta (ver room:join en
-  // shared-contract.md sección 4). No se persiste en Storage, solo en memoria
-  // de este contexto mientras la pestaña sigue abierta.
-  const identityRef = useRef({ code: null, name: null, avatarId: null });
+  // shared-contract.md sección 4), y también para recuperar la sesión tras un
+  // refresh de página (HU-F13) — persistido en sessionStorage, nunca
+  // localStorage, y limpiado al salir explícitamente de la sala.
+  const identityRef = useRef(loadStoredIdentity());
 
   useEffect(() => {
     function handleConnect() {
@@ -73,6 +103,11 @@ export function RoomProvider({ children }) {
 
     function handleRoomNotFound({ code }) {
       setRoomNotFoundCode(code);
+      // La sala guardada (ej: de una sesión anterior) ya no existe — limpiamos
+      // la identidad para no reintentar el auto-join en loop contra un código
+      // muerto (ver RoomPage, pendingRejoin).
+      identityRef.current = { code: null, name: null, avatarId: null };
+      storeIdentity(identityRef.current);
     }
 
     function handleTimerTick({ remainingSeconds }) {
@@ -131,11 +166,13 @@ export function RoomProvider({ children }) {
 
   const createRoom = useCallback((payload) => {
     identityRef.current = { code: null, name: payload.hostName, avatarId: payload.avatarId ?? null };
+    storeIdentity(identityRef.current);
     socket.emit("room:create", payload);
   }, []);
 
   const joinRoom = useCallback((code, name, avatarId = null) => {
     identityRef.current = { code, name, avatarId };
+    storeIdentity(identityRef.current);
     socket.emit("room:join", { code, name, avatarId });
   }, []);
 
@@ -145,20 +182,29 @@ export function RoomProvider({ children }) {
   const leaveRoom = useCallback(() => {
     socket.emit("room:leave");
     identityRef.current = { code: null, name: null, avatarId: null };
+    storeIdentity(identityRef.current);
     setRoom(null);
     setCurrentParticipantId(null);
   }, []);
 
   // Cuando room:created llega, ya sabemos el code definitivo generado por el
-  // servidor: lo guardamos para que una reconexión posterior use ese code.
+  // servidor: lo guardamos para que una reconexión posterior (o un refresh de
+  // página, ver HU-F13) use ese code.
   useEffect(() => {
     if (room?.code) {
       identityRef.current = { ...identityRef.current, code: room.code };
+      storeIdentity(identityRef.current);
     }
   }, [room?.code]);
 
   const clearError = useCallback(() => setLastError(null), []);
   const clearRoomNotFound = useCallback(() => setRoomNotFoundCode(null), []);
+
+  // Identidad recuperada de sessionStorage (ej: tras un F5) para la que
+  // todavía no llegó room:state — usada por RoomPage para mostrar "conectando"
+  // en vez de pedir el nombre de nuevo mientras el auto-join está en curso.
+  const pendingRejoin = !room && Boolean(identityRef.current.code && identityRef.current.name);
+  const pendingRejoinName = identityRef.current.name;
 
   const value = useMemo(
     () => ({
@@ -167,6 +213,8 @@ export function RoomProvider({ children }) {
       currentParticipantId,
       lastError,
       roomNotFoundCode,
+      pendingRejoin,
+      pendingRejoinName,
       createRoom,
       joinRoom,
       leaveRoom,
@@ -174,7 +222,20 @@ export function RoomProvider({ children }) {
       clearRoomNotFound,
       socket,
     }),
-    [room, connectionStatus, currentParticipantId, lastError, roomNotFoundCode, createRoom, joinRoom, leaveRoom, clearError, clearRoomNotFound]
+    [
+      room,
+      connectionStatus,
+      currentParticipantId,
+      lastError,
+      roomNotFoundCode,
+      pendingRejoin,
+      pendingRejoinName,
+      createRoom,
+      joinRoom,
+      leaveRoom,
+      clearError,
+      clearRoomNotFound,
+    ]
   );
 
   return <RoomContext.Provider value={value}>{children}</RoomContext.Provider>;

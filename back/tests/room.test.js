@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { createRoom, resolveAvatarId, resolveSecondsPerSpeaker, AVATAR_IDS } from "../src/domain/room.js";
+import {
+  createRoom,
+  resolveAvatarId,
+  resolveSecondsPerSpeaker,
+  resolvePreviousActionNotes,
+  AVATAR_IDS,
+  PREVIOUS_ACTION_NOTES_MAX_LENGTH,
+} from "../src/domain/room.js";
 import { DEFAULT_PHASE_DURATIONS_SECONDS } from "../src/domain/phases.js";
 import { InvalidActionError } from "../src/domain/errors.js";
 
@@ -46,9 +53,9 @@ describe("createRoom", () => {
     );
   });
 
-  it("usa el default de starsPerParticipant (3) si no se pasa", () => {
+  it("usa el default de starsPerParticipant (5) si no se pasa", () => {
     const room = createRoom(baseArgs);
-    expect(room.starsPerParticipant).toBe(3);
+    expect(room.starsPerParticipant).toBe(5);
   });
 
   it("acepta un starsPerParticipant válido dentro de 1-10", () => {
@@ -68,8 +75,8 @@ describe("createRoom", () => {
   });
 
   it("guarda un avatarId válido del set fijo", () => {
-    const room = createRoom({ ...baseArgs, avatarId: "terminal" });
-    expect(room.participants[0].avatarId).toBe("terminal");
+    const room = createRoom({ ...baseArgs, avatarId: AVATAR_IDS[0] });
+    expect(room.participants[0].avatarId).toBe(AVATAR_IDS[0]);
   });
 
   it("ignora un avatarId inválido y guarda null en su lugar (no rechaza la creación)", () => {
@@ -96,6 +103,42 @@ describe("createRoom", () => {
   it("arranca con speakerTimer null", () => {
     const room = createRoom(baseArgs);
     expect(room.speakerTimer).toBeNull();
+  });
+
+  it("guarda previousActionNotes vacío si no se pasa nada", () => {
+    const room = createRoom(baseArgs);
+    expect(room.previousActionNotes).toBe("");
+  });
+
+  it("guarda previousActionNotes con el texto libre pasado por el host, recortado", () => {
+    const room = createRoom({ ...baseArgs, previousActionNotes: "  Documentar el deploy  " });
+    expect(room.previousActionNotes).toBe("Documentar el deploy");
+  });
+
+  it("rechaza previousActionNotes que supera el máximo de caracteres", () => {
+    const tooLong = "a".repeat(PREVIOUS_ACTION_NOTES_MAX_LENGTH + 1);
+    expect(() => createRoom({ ...baseArgs, previousActionNotes: tooLong })).toThrow(InvalidActionError);
+  });
+});
+
+describe("resolvePreviousActionNotes", () => {
+  it("devuelve string vacío si no se pasa valor", () => {
+    expect(resolvePreviousActionNotes(undefined)).toBe("");
+    expect(resolvePreviousActionNotes(null)).toBe("");
+  });
+
+  it("recorta espacios al inicio/fin", () => {
+    expect(resolvePreviousActionNotes("  hola  ")).toBe("hola");
+  });
+
+  it("acepta texto hasta el máximo de caracteres", () => {
+    const exact = "a".repeat(PREVIOUS_ACTION_NOTES_MAX_LENGTH);
+    expect(resolvePreviousActionNotes(exact)).toBe(exact);
+  });
+
+  it("rechaza texto que supera el máximo de caracteres", () => {
+    const tooLong = "a".repeat(PREVIOUS_ACTION_NOTES_MAX_LENGTH + 1);
+    expect(() => resolvePreviousActionNotes(tooLong)).toThrow(InvalidActionError);
   });
 });
 

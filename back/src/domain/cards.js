@@ -37,17 +37,13 @@ function buildSimpleCard({ text }, { column, authorId, cardId }, action) {
   return { id: cardId, column, text: trimmed, authorId, votes: [] };
 }
 
-function buildActionPlanCard(room, { title, description, assigneeIds }, { authorId, cardId }, action) {
-  const trimmedTitle = title?.trim() ?? "";
-  if (!trimmedTitle) {
-    throw new InvalidActionError(action, "el título de la tarjeta no puede estar vacío");
+function buildActionPlanCard(room, { text, assigneeIds }, { authorId, cardId }, action) {
+  const trimmedText = text?.trim() ?? "";
+  if (!trimmedText) {
+    throw new InvalidActionError(action, "el texto de la tarjeta no puede estar vacío");
   }
-  if (trimmedTitle.length > CARD_TEXT_MAX_LENGTH) {
-    throw new InvalidActionError(action, `el título de la tarjeta no puede superar los ${CARD_TEXT_MAX_LENGTH} caracteres`);
-  }
-  const trimmedDescription = description?.trim() || "";
-  if (trimmedDescription.length > CARD_TEXT_MAX_LENGTH) {
-    throw new InvalidActionError(action, `la descripción no puede superar los ${CARD_TEXT_MAX_LENGTH} caracteres`);
+  if (trimmedText.length > CARD_TEXT_MAX_LENGTH) {
+    throw new InvalidActionError(action, `el texto de la tarjeta no puede superar los ${CARD_TEXT_MAX_LENGTH} caracteres`);
   }
   const resolvedAssignees = assigneeIds ?? [];
   for (const id of resolvedAssignees) {
@@ -58,8 +54,7 @@ function buildActionPlanCard(room, { title, description, assigneeIds }, { author
   return {
     id: cardId,
     column: "action_plan",
-    title: trimmedTitle,
-    description: trimmedDescription,
+    text: trimmedText,
     assigneeIds: resolvedAssignees,
     authorId,
     votes: [],

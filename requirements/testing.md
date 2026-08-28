@@ -73,6 +73,12 @@ Estos escenarios simulan una sesión real con múltiples navegadores/participant
 4. Se verifica que el participante recupera su lugar en la sala, y que su voto previo sigue
    contando.
 
+**E2E-COMPLETO-03b — Refresh de página (F5) recupera la sesión sola**
+1. Se crea una sala, se une un participante, se inicia la sesión.
+2. El participante recarga la página (F5) sin cerrar la pestaña.
+3. Se verifica que nunca se le pide el nombre de nuevo (la identidad ya estaba en
+   `sessionStorage`) y que vuelve a ver el mismo nivel que antes del refresh.
+
 **E2E-COMPLETO-04 — Timer sincronizado entre múltiples clientes**
 1. Se crea una sala, se unen dos participantes, se inicia la sesión.
 2. Se verifica que el `remainingSeconds` recibido por ambos clientes en cada `timer:tick` sea

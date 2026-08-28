@@ -29,10 +29,9 @@ solución "caja negra" que funcione pero no pueda mantener yo mismo después.
 
 ## 🕹️ Temática y experiencia: "Retro Arcade"
 
-**Temática visual: arcade retro de los 80s/90s, genérica y 100% original.** Colores saturados
-(magenta, cian, amarillo, naranja, violeta) sobre fondos oscuros, patrones geométricos (círculos
-concéntricos, chevrones, grillas), tipografía tipo pixel/8-bit para títulos, y marcos de tarjetas
-que evocan gabinetes de arcade o cartuchos de cassette.
+**Temática visual: arcade retro de los 80s/90s** Colores saturados
+(magenta, cian, amarillo, naranja, violeta) sobre fondos oscuros, patrones geométricos, tipografía tipo pixel/8-bit para títulos, y marcos de tarjetas
+
 
 > ⚠️ **Regla de layout obligatoria:** toda la aplicación se diseña **centrada**, nunca alineada a
 > la izquierda por defecto, y con **diseño responsivo real** para mobile, notebook y monitor. El
@@ -75,7 +74,7 @@ se siente natural en la UI real):
 **Mecánica de votación:** cada participante dispone de una cantidad **limitada** de estrellas de
 puntaje (diseño propio, no ligadas a ningún juego existente) para repartir entre las tarjetas que
 le parecen más importantes — **como máximo una estrella propia por tarjeta**. Esa cantidad total
-es configurable por el host al crear la sala (mínimo 1, máximo 10, valor por defecto 3 — ver
+es configurable por el host al crear la sala (mínimo 1, máximo 10, valor por defecto 5 — ver
 detalle del selector en `front.md`). Tocar una tarjeta sin estrella propia le asigna una (con una
 animación de confirmación); tocar una tarjeta que ya tiene
 mi estrella la retira (también animado). No hay texto "asignar estrella" en la interfaz — el
@@ -156,7 +155,7 @@ Explícitamente **dentro** de alcance:
 - Avance de niveles controlado por el anfitrión, con timer sincronizado para todos.
 - Agregar tarjetas de texto en los niveles correspondientes.
 - Configurar la cantidad de estrellas por participante al crear la sala (mínimo 1, máximo 10,
-  default 3).
+  default 5).
 - Repartir estrellas de puntaje sobre tarjetas (sistema de votación, ver detalle en `front.md`).
 - Ver automáticamente el Top 3 más votado en el Nivel 6 (Salón de la Fama).
 - Ver el plan de acción final consolidado en "Game Over".
@@ -168,8 +167,6 @@ explícitamente más adelante):
 - Soporte multi-organización o multi-equipo con configuración propia.
 - Editar o eliminar tarjetas después de creadas (se puede dejar como mejora futura).
 - Exportar resultados a PDF/Notion/Miro (posible V2, no ahora).
-- Cualquier asset gráfico, sonido, o texto que reproduzca marcas o personajes de juegos/consolas
-  reales — ver la regla de diseño obligatoria más arriba.
 
 ---
 
@@ -208,13 +205,6 @@ historias de usuario, criterios de aceptación y requisitos de testing para su �
 4. **Seguí el alcance del MVP.** No agregues funcionalidad fuera de lo definido en la sección de
    alcance sin preguntarme primero, aunque te parezca una buena idea — prefiero decidir yo cuándo
    sumamos scope nuevo.
-5. **Respetá siempre la regla de diseño de assets originales.** Ningún nombre, logo, personaje o
-   diseño de una franquicia de videojuegos o consola real, aunque sea "solo de referencia" o "solo
-   para el prototipo" — todo el arte y el copy se generan desde cero, inspirados en el género pero
-   sin copiar nada puntual.
-6. **Todo cambio de comportamiento definido en estos documentos** (nombres de niveles, eventos de
-   sockets, roles, límites de tiempo) tiene que reflejarse también en el documento correspondiente,
-   no solo en el código — estos `.md` son la documentación viva del proyecto.
 
 ---
 

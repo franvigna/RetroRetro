@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { io as ioClient } from "socket.io-client";
 import { setupSocket } from "../src/socket/index.js";
 import * as roomStore from "../src/rooms/roomStore.js";
+import { AVATAR_IDS } from "../src/domain/room.js";
 
 let httpServer;
 let io;
@@ -64,9 +65,9 @@ describe("integración de socket", () => {
 
   it("E2E-B02b: avatarId se guarda si es válido, y queda null si no se envía o es inválido", async () => {
     const host = connectClient();
-    host.emit("room:create", { hostName: "Cisco", avatarId: "engranaje" });
+    host.emit("room:create", { hostName: "Cisco", avatarId: AVATAR_IDS[0] });
     const { code, room: createdRoom } = await waitFor(host, "room:created");
-    expect(createdRoom.participants[0].avatarId).toBe("engranaje");
+    expect(createdRoom.participants[0].avatarId).toBe(AVATAR_IDS[0]);
 
     const participant = connectClient();
     const hostStatePromise = waitFor(host, "room:state");
@@ -75,6 +76,28 @@ describe("integración de socket", () => {
 
     const ana = participantState.room.participants.find((p) => p.name === "Ana");
     expect(ana.avatarId).toBeNull();
+  });
+
+  it("room:create guarda previousActionNotes como texto libre, visible para todos en room:state", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco", previousActionNotes: "Documentar el proceso de deploy" });
+    const { code, room: createdRoom } = await waitFor(host, "room:created");
+    expect(createdRoom.previousActionNotes).toBe("Documentar el proceso de deploy");
+
+    const participant = connectClient();
+    const hostStatePromise = waitFor(host, "room:state");
+    participant.emit("room:join", { code, name: "Ana" });
+    const [, participantState] = await Promise.all([hostStatePromise, waitFor(participant, "room:state")]);
+
+    expect(participantState.room.previousActionNotes).toBe("Documentar el proceso de deploy");
+  });
+
+  it("room:create rechaza previousActionNotes que supera el máximo de caracteres", async () => {
+    const host = connectClient();
+    const errorPromise = waitFor(host, "error:invalid_action");
+    host.emit("room:create", { hostName: "Cisco", previousActionNotes: "a".repeat(2001) });
+    const error = await errorPromise;
+    expect(error.action).toBe("room:create");
   });
 
   it("E2E-B03: un no-host que emite phase:advance recibe error:unauthorized sin cambiar el estado", async () => {
@@ -272,7 +295,7 @@ describe("integración de socket", () => {
 
   it("un 4to voto sin toggle responde error:invalid_action", async () => {
     const host = connectClient();
-    host.emit("room:create", { hostName: "Cisco" });
+    host.emit("room:create", { hostName: "Cisco", starsPerParticipant: 3 });
     const { code } = await waitFor(host, "room:created");
 
     host.emit("phase:start_session");

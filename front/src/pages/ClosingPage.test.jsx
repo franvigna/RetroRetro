@@ -21,8 +21,7 @@ function closingRoom() {
       {
         id: "c1",
         column: "action_plan",
-        title: "Hacer algo",
-        description: "",
+        text: "Hacer algo",
         assigneeIds: [],
         authorId: "host-1",
         votes: [],
@@ -35,8 +34,8 @@ function closingRoom() {
   };
 }
 
-function renderClosing() {
-  mockSocket.id = "host-1";
+function renderClosing({ room = closingRoom(), participantId = "host-1" } = {}) {
+  mockSocket.id = participantId;
   render(
     <MemoryRouter initialEntries={["/room/RETRO-AB12"]}>
       <RoomProvider>
@@ -49,8 +48,8 @@ function renderClosing() {
   );
   act(() => {
     mockSocket.trigger("connect");
-    mockSocket.trigger("room:joined", { participantId: "host-1" });
-    mockSocket.trigger("room:state", { room: closingRoom() });
+    mockSocket.trigger("room:joined", { participantId });
+    mockSocket.trigger("room:state", { room });
   });
 }
 
@@ -75,5 +74,36 @@ describe("ClosingPage — volver al inicio", () => {
 
     expect(mockSocket.emit).toHaveBeenCalledWith("room:leave");
     expect(screen.getByTestId("landing")).toBeInTheDocument();
+  });
+});
+
+describe("ClosingPage — volver a la fase anterior (host)", () => {
+  beforeEach(() => {
+    mockSocket.emit.mockClear();
+  });
+
+  it("el host ve el botón Nivel anterior deshabilitado si no hay historial", () => {
+    renderClosing();
+    expect(screen.getByRole("button", { name: /Nivel anterior/ })).toBeDisabled();
+  });
+
+  it("el host puede volver a la fase anterior si hay historial", () => {
+    const room = { ...closingRoom(), phaseHistory: ["action_plan"] };
+    renderClosing({ room });
+    fireEvent.click(screen.getByRole("button", { name: /Nivel anterior/ }));
+    expect(mockSocket.emit).toHaveBeenCalledWith("phase:go_back");
+  });
+
+  it("un participante no-host no ve el botón Nivel anterior", () => {
+    const room = {
+      ...closingRoom(),
+      phaseHistory: ["action_plan"],
+      participants: [
+        { id: "host-1", name: "Cisco", role: "host", connected: true },
+        { id: "p2", name: "Ana", role: "participant", connected: true },
+      ],
+    };
+    renderClosing({ room, participantId: "p2" });
+    expect(screen.queryByRole("button", { name: /Nivel anterior/ })).not.toBeInTheDocument();
   });
 });

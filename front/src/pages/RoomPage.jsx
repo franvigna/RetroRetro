@@ -5,19 +5,34 @@ import { WaitingRoomPage } from "./WaitingRoomPage.jsx";
 import { ActivePhasePage } from "./ActivePhasePage.jsx";
 import { ClosingPage } from "./ClosingPage.jsx";
 
-// Punto de entrada de la ruta /room/:code. Nunca persiste nada en Storage:
-// si el contexto todavía no tiene el room cargado (ej. refresh duro de
-// página), le vuelve a pedir el nombre a la persona usuaria y reintenta
-// room:join con el code de la URL (ver shared-contract.md sección 4).
+// Punto de entrada de la ruta /room/:code. Si el contexto todavía no tiene el
+// room cargado (ej. refresh duro de página), RoomContext ya reintenta
+// room:join solo con la identidad guardada en sessionStorage (HU-F13) — acá
+// solo mostramos un estado de "conectando" mientras eso resuelve, y recién le
+// pedimos el nombre a mano si no hay identidad guardada para recuperar.
 export function RoomPage() {
   const { code } = useParams();
-  const { room, joinRoom, roomNotFoundCode, clearRoomNotFound } = useRoom();
+  const { room, joinRoom, roomNotFoundCode, clearRoomNotFound, pendingRejoin, pendingRejoinName } = useRoom();
   const [name, setName] = useState("");
   const [touched, setTouched] = useState(false);
 
   const roomMatchesUrl = room && room.code === code;
 
   if (!roomMatchesUrl) {
+    if (pendingRejoin) {
+      return (
+        <div className="page page-narrow">
+          <h1 className="brand-title pixel-text">RECONECTANDO</h1>
+          <div className="cabinet">
+            <div className="cabinet-bezel" />
+            <p className="cabinet-subtitle">
+              Recuperando tu lugar en la sala <strong>{code}</strong> como {pendingRejoinName}...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     function handleSubmit(e) {
       e.preventDefault();
       setTouched(true);

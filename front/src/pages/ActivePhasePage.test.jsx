@@ -140,6 +140,47 @@ describe("ActivePhasePage — expression_round (Turno de jugador)", () => {
     );
     expect(screen.queryByText(/Sigue:/)).not.toBeInTheDocument();
   });
+
+  it("muestra las tarjetas de keep_improve_try escritas por todos, sin filtrar por autor", () => {
+    const room = baseRoom({
+      phase: "expression_round",
+      cards: [
+        { id: "c1", column: "keep", text: "Card de Cisco", authorId: "host-1", votes: [] },
+        { id: "c2", column: "improve", text: "Card de Ana", authorId: "part-1", votes: [] },
+      ],
+    });
+    renderRoom("part-1", room);
+    expect(screen.getByText("Card de Cisco")).toBeInTheDocument();
+    expect(screen.getByText("Card de Ana")).toBeInTheDocument();
+  });
+
+  it("no muestra botón de voto (estrella) en las tarjetas durante expression_round", () => {
+    const room = baseRoom({
+      phase: "expression_round",
+      cards: [{ id: "c1", column: "keep", text: "Card de Cisco", authorId: "host-1", votes: [] }],
+    });
+    renderRoom("part-1", room);
+    expect(screen.queryByRole("button", { name: "Dar tu estrella a esta tarjeta" })).not.toBeInTheDocument();
+  });
+
+  it("no permite agregar tarjetas nuevas durante expression_round", () => {
+    const room = baseRoom({ phase: "expression_round", cards: [] });
+    renderRoom("part-1", room);
+    expect(screen.queryByLabelText("Nueva tarjeta")).not.toBeInTheDocument();
+  });
+
+  it("permite editar/eliminar la propia tarjeta, no las ajenas, durante expression_round", () => {
+    const room = baseRoom({
+      phase: "expression_round",
+      cards: [
+        { id: "c1", column: "keep", text: "Card de Cisco", authorId: "host-1", votes: [] },
+        { id: "c2", column: "improve", text: "Card de Ana", authorId: "part-1", votes: [] },
+      ],
+    });
+    renderRoom("part-1", room);
+    expect(screen.getByLabelText("Editar tarjeta")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Editar tarjeta")).toHaveLength(1);
+  });
 });
 
 describe("ActivePhasePage — TimerFinishedBanner (fases normales)", () => {
@@ -185,5 +226,19 @@ describe("ActivePhasePage — hall_of_fame (Salón de la Fama)", () => {
     renderRoom("host-1", room);
     expect(screen.getByText("Top card")).toBeInTheDocument();
     expect(screen.queryByLabelText("Nueva tarjeta")).not.toBeInTheDocument();
+  });
+});
+
+describe("ActivePhasePage — previous_action (Nivel 2)", () => {
+  it("muestra el texto libre cargado por el host al crear la sala", () => {
+    const room = baseRoom({ phase: "previous_action", previousActionNotes: "Documentar el deploy" });
+    renderRoom("host-1", room);
+    expect(screen.getByText("Documentar el deploy")).toBeInTheDocument();
+  });
+
+  it("muestra un mensaje claro si el host no cargó ningún pendiente", () => {
+    const room = baseRoom({ phase: "previous_action", previousActionNotes: "" });
+    renderRoom("host-1", room);
+    expect(screen.getByText(/no cargó ningún pendiente/)).toBeInTheDocument();
   });
 });

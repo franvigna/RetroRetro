@@ -1,11 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { useRoom } from "../context/RoomContext.jsx";
+import { useRoomEvents } from "../hooks/useRoomEvents.js";
 import { PHASE_THEMES } from "../domain/phaseThemes.js";
 
 export function ClosingPage() {
-  const { room, leaveRoom } = useRoom();
+  const { room, leaveRoom, currentParticipantId } = useRoom();
+  const { goBackPhase } = useRoomEvents();
   const navigate = useNavigate();
   const theme = PHASE_THEMES.closing;
+
+  const me = room.participants.find((p) => p.id === currentParticipantId);
+  const isHost = me?.role === "host";
+  const canGoBack = room.phaseHistory.length > 0;
 
   function handleBackToStart() {
     leaveRoom();
@@ -32,8 +38,7 @@ export function ClosingPage() {
               const assigneeNames = (card.assigneeIds || []).map((id) => participantsById[id]?.name || "?");
               return (
                 <li key={card.id} className="card-item">
-                  <span className="card-item-title">{card.title}</span>
-                  {card.description && <span className="card-item-text">{card.description}</span>}
+                  <span className="card-item-title">{card.text}</span>
                   {assigneeNames.length > 0 && (
                     <span className="card-item-assignees">Responsables: {assigneeNames.join(", ")}</span>
                   )}
@@ -46,7 +51,15 @@ export function ClosingPage() {
           </ul>
         )}
 
-        <button type="button" className="btn btn-primary btn-block" style={{ marginTop: "1.5rem" }} onClick={handleBackToStart}>
+        {isHost && (
+          <div className="btn-row" style={{ marginTop: "1.5rem" }}>
+            <button type="button" className="btn btn-ghost" onClick={goBackPhase} disabled={!canGoBack}>
+              ◀ Nivel anterior
+            </button>
+          </div>
+        )}
+
+        <button type="button" className="btn btn-primary btn-block" style={{ marginTop: "0.75rem" }} onClick={handleBackToStart}>
           ▶ Volver al inicio
         </button>
       </div>

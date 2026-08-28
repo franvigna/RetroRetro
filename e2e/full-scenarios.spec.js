@@ -52,7 +52,7 @@ test("E2E-COMPLETO-01: sesión feliz de punta a punta con dos participantes", as
   await advancePhase(hostPage); // action_plan
   await expect(hostPage.locator(".brand-tagline").getByText("Guardar partida")).toBeVisible();
 
-  await addActionPlanCard(hostPage, { title: "Acción consolidada 1" });
+  await addActionPlanCard(hostPage, { text: "Acción consolidada 1" });
   await expect(hostPage.getByText("Acción consolidada 1")).toBeVisible();
 
   await advancePhase(hostPage); // closing
@@ -116,6 +116,29 @@ test("E2E-COMPLETO-03: reconexión durante una sesión activa conserva el voto p
 
   await expect(reconnectedPage.getByText("Ranking de estrellas")).toBeVisible();
   await expect(reconnectedPage.getByRole("button", { name: "Quitar tu estrella de esta tarjeta" }).first()).toBeVisible();
+
+  await hostContext.close();
+  await participantContext.close();
+});
+
+test("E2E-COMPLETO-03b: un refresh de página (F5) recupera la sesión sola, sin pedir el nombre (HU-F13)", async ({ browser }) => {
+  const hostContext = await browser.newContext();
+  const hostPage = await hostContext.newPage();
+  const code = await createRoomAsHost(hostPage, { hostName: "Cisco" });
+
+  const participantContext = await browser.newContext();
+  const participantPage = await participantContext.newPage();
+  await joinRoomAsParticipant(participantPage, { code, name: "Ana" });
+
+  await hostPage.getByRole("button", { name: "▶ Iniciar partida" }).click();
+  await expect(participantPage.getByText("Cómo jugar")).toBeVisible();
+
+  await participantPage.reload();
+
+  // No debe pedir el nombre de nuevo: el auto-join usa la identidad guardada
+  // en sessionStorage antes del refresh.
+  await expect(participantPage.getByLabel("Tu nombre")).not.toBeVisible({ timeout: 8000 });
+  await expect(participantPage.getByText("Cómo jugar")).toBeVisible();
 
   await hostContext.close();
   await participantContext.close();
