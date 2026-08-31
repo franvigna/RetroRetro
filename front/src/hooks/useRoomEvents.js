@@ -10,6 +10,10 @@ export function useRoomEvents() {
   const startSession = useCallback(() => socket.emit("phase:start_session"), [socket]);
   const advancePhase = useCallback(() => socket.emit("phase:advance"), [socket]);
   const goBackPhase = useCallback(() => socket.emit("phase:go_back"), [socket]);
+  const setPreviousActionItem = useCallback(
+    (index, done) => socket.emit("phase:set_previous_action_item", { index, done }),
+    [socket]
+  );
   const pauseTimer = useCallback(() => socket.emit("timer:pause"), [socket]);
   const resumeTimer = useCallback(() => socket.emit("timer:resume"), [socket]);
   const addTime = useCallback((seconds) => socket.emit("timer:add_time", { seconds }), [socket]);
@@ -45,11 +49,17 @@ export function useRoomEvents() {
   const clearSpeaker = useCallback(() => socket.emit("turn:clear_speaker"), [socket]);
   const advanceSpeaker = useCallback(() => socket.emit("turn:advance"), [socket]);
   const leaveRoom = useCallback(() => socket.emit("room:leave"), [socket]);
+  const updateRoomSettings = useCallback(
+    (starsPerParticipant) => socket.emit("room:update_settings", { starsPerParticipant }),
+    [socket]
+  );
+  const closeRoom = useCallback(() => socket.emit("room:close"), [socket]);
 
   return {
     startSession,
     advancePhase,
     goBackPhase,
+    setPreviousActionItem,
     pauseTimer,
     resumeTimer,
     addTime,
@@ -61,5 +71,7 @@ export function useRoomEvents() {
     clearSpeaker,
     advanceSpeaker,
     leaveRoom,
+    updateRoomSettings,
+    closeRoom,
   };
 }

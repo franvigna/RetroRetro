@@ -250,18 +250,20 @@ test("E2E-F08: un participante sin controles de host no puede avanzar de fase v�
   const participantPage = await participantContext.newPage();
   await joinRoomAsParticipant(participantPage, { code, name: "Ana" });
 
+  // El cliente de prueba tiene que obtener una identidad antes de que la
+  // sala se bloquee a ingresos nuevos; luego intenta escalar privilegios.
+  const rogueSocket = ioClient("http://localhost:3000", { transports: ["websocket"] });
+  await new Promise((resolve) => rogueSocket.on("connect", resolve));
+  rogueSocket.emit("room:join", { code, name: "Intruso" });
+  await new Promise((resolve) => rogueSocket.once("room:state", resolve));
+
   await hostPage.getByRole("button", { name: "▶ Iniciar partida" }).click();
   await expect(participantPage.getByText("Cómo jugar")).toBeVisible();
 
   // La UI del participante nunca muestra el control (mejora de UX, no la seguridad real).
   await expect(participantPage.getByRole("button", { name: "Siguiente nivel ▶" })).toHaveCount(0);
 
-  // Manipulación directa: un cliente de socket separado (no la UI) intenta el evento reservado a host.
-  const rogueSocket = ioClient("http://localhost:3000", { transports: ["websocket"] });
-  await new Promise((resolve) => rogueSocket.on("connect", resolve));
-  rogueSocket.emit("room:join", { code, name: "Intruso" });
-  await new Promise((resolve) => rogueSocket.once("room:state", resolve));
-
+  // Manipulación directa: el cliente separado intenta el evento reservado a host.
   const unauthorizedPromise = new Promise((resolve) => rogueSocket.once("error:unauthorized", resolve));
   rogueSocket.emit("phase:advance");
   const error = await unauthorizedPromise;
@@ -420,7 +422,7 @@ test("E2E-F11: flujo completo de punta a punta hasta Game Over, con action_plan 
     assigneeLabel: "Ana",
   });
   await expect(hostPage.getByText("Hacer retro de arquitectura la próxima semana")).toBeVisible();
-  await expect(hostPage.getByText("Responsables: Ana")).toBeVisible();
+  await expect(hostPage.locator(".card-item", { hasText: "Responsables:" }).getByText("Ana", { exact: true })).toBeVisible();
 
   await advancePhase(hostPage); // closing
 

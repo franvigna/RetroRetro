@@ -52,6 +52,7 @@ export function RoomProvider({ children }) {
   const [lastError, setLastError] = useState(null);
   const [roomNotFoundCode, setRoomNotFoundCode] = useState(null);
   const [roomLockedCode, setRoomLockedCode] = useState(null);
+  const [roomClosed, setRoomClosed] = useState(false);
 
   // Guardamos el nombre usado en el último room:join/room:create para poder
   // reintentar la reconexión si el socket se reconecta (ver room:join en
@@ -133,6 +134,19 @@ export function RoomProvider({ children }) {
       setRoomLockedCode(code);
     }
 
+    // El host cerró la sala desde el panel de configuración (room:close) — a
+    // diferencia de room:leave, esto afecta a TODOS los conectados, no solo a
+    // quien lo pidió. Limpiamos la identidad guardada igual que en
+    // room:not_found: no tiene sentido reintentar un auto-join contra una
+    // sala que ya no existe.
+    function handleRoomClosed() {
+      setRoomClosed(true);
+      setRoom(null);
+      setCurrentParticipantId(null);
+      identityRef.current = { code: null, name: null, avatarId: null, sessionToken: null };
+      storeIdentity(identityRef.current);
+    }
+
     function handleTimerTick({ remainingSeconds }) {
       setRoom((prev) => (prev ? { ...prev, timer: { ...prev.timer, remainingSeconds } } : prev));
     }
@@ -169,6 +183,7 @@ export function RoomProvider({ children }) {
     socket.on("room:state", handleRoomState);
     socket.on("room:not_found", handleRoomNotFound);
     socket.on("room:join_locked", handleRoomJoinLocked);
+    socket.on("room:closed", handleRoomClosed);
     socket.on("timer:tick", handleTimerTick);
     socket.on("speaker:tick", handleSpeakerTick);
     socket.on("error:unauthorized", handleUnauthorized);
@@ -190,6 +205,7 @@ export function RoomProvider({ children }) {
       socket.off("room:state", handleRoomState);
       socket.off("room:not_found", handleRoomNotFound);
       socket.off("room:join_locked", handleRoomJoinLocked);
+      socket.off("room:closed", handleRoomClosed);
       socket.off("timer:tick", handleTimerTick);
       socket.off("speaker:tick", handleSpeakerTick);
       socket.off("error:unauthorized", handleUnauthorized);
@@ -239,6 +255,7 @@ export function RoomProvider({ children }) {
   const clearError = useCallback(() => setLastError(null), []);
   const clearRoomNotFound = useCallback(() => setRoomNotFoundCode(null), []);
   const clearRoomLocked = useCallback(() => setRoomLockedCode(null), []);
+  const clearRoomClosed = useCallback(() => setRoomClosed(false), []);
 
   // Identidad recuperada de sessionStorage (ej: tras un F5) para la que
   // todavía no llegó room:state — usada por RoomPage para mostrar "conectando"
@@ -254,6 +271,7 @@ export function RoomProvider({ children }) {
       lastError,
       roomNotFoundCode,
       roomLockedCode,
+      roomClosed,
       pendingRejoin,
       pendingRejoinName,
       createRoom,
@@ -262,6 +280,7 @@ export function RoomProvider({ children }) {
       clearError,
       clearRoomNotFound,
       clearRoomLocked,
+      clearRoomClosed,
       socket,
     }),
     [
@@ -271,6 +290,7 @@ export function RoomProvider({ children }) {
       lastError,
       roomNotFoundCode,
       roomLockedCode,
+      roomClosed,
       pendingRejoin,
       pendingRejoinName,
       createRoom,
@@ -279,6 +299,7 @@ export function RoomProvider({ children }) {
       clearError,
       clearRoomNotFound,
       clearRoomLocked,
+      clearRoomClosed,
     ]
   );
 

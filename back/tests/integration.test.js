@@ -20,6 +20,15 @@ function waitFor(socket, event) {
   return new Promise((resolve) => socket.once(event, resolve));
 }
 
+async function advanceToExpressionRound(host) {
+  host.emit("phase:start_session");
+  await waitFor(host, "room:state");
+  for (let i = 0; i < 3; i++) {
+    host.emit("phase:advance");
+    await waitFor(host, "room:state");
+  }
+}
+
 beforeEach(async () => {
   httpServer = createServer();
   io = setupSocket(httpServer, "*");
@@ -279,6 +288,28 @@ describe("integración de socket", () => {
     expect(card.votes[0]).toBe(joinedPayload.participantId);
   });
 
+  it("reanuda el timer server-side cuando vuelve el primer cliente tras quedar la sala vacía", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco", phaseDurations: { welcome: 60 } });
+    const { code, sessionToken } = await waitFor(host, "room:created");
+
+    host.emit("phase:start_session");
+    const started = await waitFor(host, "room:state");
+    expect(started.room.timer.status).toBe("running");
+
+    host.disconnect();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const reconnected = connectClient();
+    const joinedPromise = waitFor(reconnected, "room:joined");
+    const tickPromise = waitFor(reconnected, "timer:tick");
+    reconnected.emit("room:join", { code, name: "ignorado", sessionToken });
+    await joinedPromise;
+    const tick = await tickPromise;
+
+    expect(tick.remainingSeconds).toBeLessThan(started.room.timer.remainingSeconds);
+  }, 4000);
+
   it("HU-B02b: escribir el nombre exacto del host desconectado, sin su sessionToken, NO da control de host", async () => {
     const host = connectClient();
     host.emit("room:create", { hostName: "Cisco" });
@@ -496,9 +527,19 @@ describe("integración de socket", () => {
     const unauthorizedError = await unauthorizedPromise;
     expect(unauthorizedError.action).toBe("turn:set_speaker");
 
+    await advanceToExpressionRound(host);
+
     // El host sí puede marcar a Ana como oradora, y ambos ven el cambio.
     const hostStatePromise = waitFor(host, "room:state");
-    const participantStatePromise = waitFor(participant, "room:state");
+    const participantStatePromise = new Promise((resolve) => {
+      function onState(state) {
+        if (state.room.currentSpeakerId === participant.id) {
+          participant.off("room:state", onState);
+          resolve(state);
+        }
+      }
+      participant.on("room:state", onState);
+    });
     host.emit("turn:set_speaker", { participantId: participant.id });
     const [hostState, participantState] = await Promise.all([hostStatePromise, participantStatePromise]);
     expect(hostState.room.currentSpeakerId).toBe(participant.id);
@@ -520,6 +561,8 @@ describe("integración de socket", () => {
     const hostJoinBroadcastPromise = waitFor(host, "room:state");
     participant.emit("room:join", { code, name: "Ana" });
     await Promise.all([waitFor(participant, "room:state"), hostJoinBroadcastPromise]);
+
+    await advanceToExpressionRound(host);
 
     const setPromise = waitFor(host, "room:state");
     host.emit("turn:set_speaker", { participantId: host.id });
@@ -558,6 +601,8 @@ describe("integración de socket", () => {
     const hostJoinBroadcastPromise = waitFor(host, "room:state");
     participant.emit("room:join", { code, name: "Ana" });
     await Promise.all([waitFor(participant, "room:state"), hostJoinBroadcastPromise]);
+
+    await advanceToExpressionRound(host);
 
     let state = await new Promise((resolve) => {
       host.once("room:state", resolve);
@@ -615,6 +660,8 @@ describe("integración de socket", () => {
     participant.emit("room:join", { code, name: "Ana" });
     await waitFor(participant, "room:state");
 
+    await advanceToExpressionRound(host);
+
     host.emit("turn:set_speaker", { participantId: host.id });
     await waitFor(host, "room:state");
 
@@ -632,6 +679,18 @@ describe("integración de socket", () => {
     expect(rotatedState.currentSpeakerId).toBe(participant.id);
     expect(rotatedState.speakerTimer.remainingSeconds).toBe(30);
   }, 35000);
+
+  it("rechaza acciones de orador fuera de expression_round", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco" });
+    await waitFor(host, "room:created");
+
+    const errorPromise = waitFor(host, "error:invalid_action");
+    host.emit("turn:set_speaker", { participantId: host.id });
+    const error = await errorPromise;
+
+    expect(error.action).toBe("turn:set_speaker");
+  });
 
   it("hall_of_fame: el Top 3 se deriva de cards, no requiere ningún evento nuevo del servidor", async () => {
     const host = connectClient();
@@ -713,6 +772,150 @@ describe("integración de socket", () => {
 
     expect(hostRevealState.room.cards).toHaveLength(2);
     expect(participantRevealState.room.cards).toHaveLength(2);
+  });
+
+  it("room:update_settings cambia starsPerParticipant para todos, y rechaza a un no-host", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco", starsPerParticipant: 5 });
+    const { code } = await waitFor(host, "room:created");
+
+    const participant = connectClient();
+    const hostJoinBroadcastPromise = waitFor(host, "room:state");
+    participant.emit("room:join", { code, name: "Ana" });
+    await Promise.all([waitFor(participant, "room:state"), hostJoinBroadcastPromise]);
+
+    const unauthorizedPromise = waitFor(participant, "error:unauthorized");
+    participant.emit("room:update_settings", { starsPerParticipant: 3 });
+    const unauthorizedError = await unauthorizedPromise;
+    expect(unauthorizedError.action).toBe("room:update_settings");
+
+    const hostStatePromise = waitFor(host, "room:state");
+    const participantStatePromise = waitFor(participant, "room:state");
+    host.emit("room:update_settings", { starsPerParticipant: 3 });
+    const [hostState, participantState] = await Promise.all([hostStatePromise, participantStatePromise]);
+
+    expect(hostState.room.starsPerParticipant).toBe(3);
+    expect(participantState.room.starsPerParticipant).toBe(3);
+  });
+
+  it("room:update_settings no invalida votos ya emitidos por encima del nuevo máximo", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco", starsPerParticipant: 3 });
+    const { code } = await waitFor(host, "room:created");
+
+    host.emit("phase:start_session");
+    await waitFor(host, "room:state");
+    for (let i = 0; i < 2; i++) {
+      host.emit("phase:advance");
+      await waitFor(host, "room:state");
+    }
+
+    const cardIds = [];
+    for (let i = 0; i < 3; i++) {
+      const state = await new Promise((resolve) => {
+        host.once("room:state", resolve);
+        host.emit("card:add", { column: "keep", text: `card ${i}` });
+      });
+      cardIds.push(state.room.cards[i].id);
+    }
+
+    host.emit("phase:advance"); // expression_round
+    await waitFor(host, "room:state");
+    host.emit("phase:advance"); // grouping_voting
+    await waitFor(host, "room:state");
+
+    for (const cardId of cardIds) {
+      const votePromise = waitFor(host, "room:state");
+      host.emit("card:vote", { cardId });
+      await votePromise;
+    }
+
+    // El host baja el máximo a 1 con sus 3 votos ya puestos: no se le borra nada.
+    const settingsPromise = waitFor(host, "room:state");
+    host.emit("room:update_settings", { starsPerParticipant: 1 });
+    const settingsState = await settingsPromise;
+    expect(settingsState.room.starsPerParticipant).toBe(1);
+    for (const cardId of cardIds) {
+      const card = settingsState.room.cards.find((c) => c.id === cardId);
+      expect(card.votes).toContain(host.id);
+    }
+
+    // Pero no puede sumar un voto nuevo hasta bajar de ese nuevo máximo.
+    host.emit("card:vote", { cardId: cardIds[0] }); // retira uno (queda en 2 usadas)
+    await waitFor(host, "room:state");
+    const errorPromise = waitFor(host, "error:invalid_action");
+    host.emit("card:vote", { cardId: cardIds[0] }); // intenta volver a asignarlo: 3ra estrella > máximo 1
+    const error = await errorPromise;
+    expect(error.action).toBe("card:vote");
+  });
+
+  it("room:close termina la sala para todos y evita seguir operando sobre ella", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco" });
+    const { code } = await waitFor(host, "room:created");
+
+    const participant = connectClient();
+    const hostJoinBroadcastPromise = waitFor(host, "room:state");
+    participant.emit("room:join", { code, name: "Ana" });
+    await Promise.all([waitFor(participant, "room:state"), hostJoinBroadcastPromise]);
+
+    const unauthorizedPromise = waitFor(participant, "error:unauthorized");
+    participant.emit("room:close");
+    const unauthorizedError = await unauthorizedPromise;
+    expect(unauthorizedError.action).toBe("room:close");
+    expect(roomStore.get(code)).toBeDefined();
+
+    const hostClosedPromise = waitFor(host, "room:closed");
+    const participantClosedPromise = waitFor(participant, "room:closed");
+    host.emit("room:close");
+    const [hostClosed, participantClosed] = await Promise.all([hostClosedPromise, participantClosedPromise]);
+
+    expect(hostClosed.code).toBe(code);
+    expect(participantClosed.code).toBe(code);
+    expect(roomStore.get(code)).toBeUndefined();
+
+    // Un intento de seguir operando sobre la sala ya cerrada no revive nada ni rompe el servidor.
+    host.emit("phase:advance");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(roomStore.get(code)).toBeUndefined();
+  });
+
+  it("phase:set_previous_action_item marca/desmarca un ítem del Nivel 2 para todos, y rechaza índice fuera de rango", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco", previousActionNotes: "uno\ndos\ntres" });
+    const { code } = await waitFor(host, "room:created");
+
+    const participant = connectClient();
+    const hostJoinBroadcastPromise = waitFor(host, "room:state");
+    participant.emit("room:join", { code, name: "Ana" });
+    await Promise.all([waitFor(participant, "room:state"), hostJoinBroadcastPromise]);
+
+    // Cualquier participante (no solo el host) puede marcar un ítem.
+    const hostStatePromise = waitFor(host, "room:state");
+    const participantStatePromise = waitFor(participant, "room:state");
+    participant.emit("phase:set_previous_action_item", { index: 1, done: true });
+    const [hostState, participantState] = await Promise.all([hostStatePromise, participantStatePromise]);
+
+    expect(hostState.room.previousActionChecks).toEqual({ 1: true });
+    expect(participantState.room.previousActionChecks).toEqual({ 1: true });
+
+    // Marcar el mismo valor de nuevo no cambia nada (no es un toggle).
+    const samePromise = waitFor(host, "room:state");
+    participant.emit("phase:set_previous_action_item", { index: 1, done: true });
+    const sameState = await samePromise;
+    expect(sameState.room.previousActionChecks).toEqual({ 1: true });
+
+    // Desmarcarlo explícitamente.
+    const unmarkedPromise = waitFor(host, "room:state");
+    participant.emit("phase:set_previous_action_item", { index: 1, done: false });
+    const unmarkedState = await unmarkedPromise;
+    expect(unmarkedState.room.previousActionChecks).toEqual({ 1: false });
+
+    // Índice fuera de rango (solo hay 3 líneas: 0, 1, 2).
+    const errorPromise = waitFor(host, "error:invalid_action");
+    host.emit("phase:set_previous_action_item", { index: 5, done: true });
+    const error = await errorPromise;
+    expect(error.action).toBe("phase:set_previous_action_item");
   });
 
   it("E2E-B10: card:edit y card:delete solo funcionan para el autor de la tarjeta", async () => {

@@ -1,5 +1,5 @@
-import { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { RoomProvider, useRoom } from "./context/RoomContext.jsx";
 import { ConnectionBanner } from "./components/ConnectionBanner.jsx";
 import { LandingPage } from "./pages/LandingPage.jsx";
@@ -15,10 +15,29 @@ const AvatarLabPage = lazy(() => import("./pages/AvatarLabPage.jsx").then((m) =>
 const DEV_TOOLS_ENABLED = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_TOOLS === "true";
 
 function AppShell() {
-  const { connectionStatus } = useRoom();
+  const { connectionStatus, roomClosed, clearRoomClosed } = useRoom();
+  const navigate = useNavigate();
+
+  // El host cerró la sala desde el panel de configuración (room:close) —
+  // saca a todos, incluido el propio host, de vuelta al inicio (ver
+  // RoomContext.jsx, handleRoomClosed).
+  useEffect(() => {
+    if (roomClosed) {
+      navigate("/");
+    }
+  }, [roomClosed, navigate]);
+
   return (
     <>
       <ConnectionBanner status={connectionStatus} />
+      {roomClosed && (
+        <div className="room-closed-banner" role="status">
+          El anfitrión cerró la sala.
+          <button type="button" className="card-item-action-btn" aria-label="Cerrar aviso" onClick={clearRoomClosed}>
+            ✕
+          </button>
+        </div>
+      )}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/create" element={<CreateRoomPage />} />

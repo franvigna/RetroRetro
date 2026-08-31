@@ -6,7 +6,7 @@ import { healthRouter } from "./routes/health.js";
 import { setupSocket } from "./socket/index.js";
 import * as roomStore from "./rooms/roomStore.js";
 import { sweepInactiveRooms } from "./rooms/cleanup.js";
-import { stopTimerLoop } from "./socket/timerLoop.js";
+import { stopTimerLoop, stopSpeakerTimerLoop } from "./socket/timerLoop.js";
 
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -24,6 +24,7 @@ setInterval(() => {
     getLastActivity: roomStore.getLastActivity,
     remove: (code) => {
       stopTimerLoop(code);
+      stopSpeakerTimerLoop(code);
       roomStore.remove(code);
     },
     now: Date.now(),

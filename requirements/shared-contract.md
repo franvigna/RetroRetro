@@ -132,9 +132,29 @@ interface RoomState {
   secondsPerSpeaker: number;   // configurado por el host al crear la sala. Min 30, max 300, default 60. Ver "Rotación automática del Nivel 4".
   speakerTimer: SpeakerTimerState | null; // mini-timer del orador actual durante expression_round. null si currentSpeakerId es null.
   previousActionNotes: string; // texto libre opcional que el host pega al crear la sala (ej: acciones concretas de la retro anterior, copiadas a mano del Game Over previo). Se muestra tal cual en el Nivel 2 (previous_action). Máximo 2000 caracteres. No es persistencia real entre sesiones — sigue fuera del MVP (ver back.md sección 5) — es solo texto que viaja en esta sala puntual.
+  previousActionChecks: Record<number, boolean>; // tildes del Nivel 2 (ver "Tildes del Nivel 2" más abajo). Clave = índice de línea no vacía de previousActionNotes (0-based), valor = cumplido/no cumplido. Efímero, igual que previousActionNotes: no persiste entre sesiones.
   createdAt: number;          // timestamp epoch ms
 }
 ```
+
+## Tildes del Nivel 2 (previousActionChecks)
+
+`previousActionNotes` se muestra como una lista: cada línea no vacía (tras separar por `\n`) es
+un ítem con un tilde/cruz al lado, pensado como ayuda visual **en vivo** para la charla del
+equipo sobre qué se cumplió de la retro anterior — no es un registro real, se pierde igual que el
+resto del estado al cerrar la sala.
+
+- Cualquier participante conectado puede marcar un ítem (no es host-only: es una conversación
+  grupal, cualquiera puede señalar "esto se cumplió").
+- El índice de cada ítem se calcula igual en front y back: `previousActionNotes.split("\n")`,
+  filtrando las líneas cuyo `.trim()` queda vacío, y tomando la posición resultante (0-based) en
+  esa lista ya filtrada.
+- Cada ítem tiene dos botones separados en la UI (✓ "cumplido" / ✕ "no cumplido"), no uno solo
+  que alterna — tocar el botón que ya representa el estado actual no debe invertirlo.
+- Evento nuevo cliente→servidor `phase:set_previous_action_item` `{ index: number, done: boolean }`:
+  fija `previousActionChecks[index]` al valor exacto de `done` (ausente se trata como `false`). El
+  servidor rechaza con `error:invalid_action` si `index` está fuera de rango para la cantidad de
+  líneas actuales, o si `done` no es un booleano.
 
 ## Rotación automática del Nivel 4 (expression_round)
 
@@ -192,9 +212,12 @@ y votó**, no de algo decidido de antemano por el host.
 |---|---|---|---|
 | `room:create` | `{ hostName: string, starsPerParticipant?: number, secondsPerSpeaker?: number, avatarId?: string, previousActionNotes?: string }` | Cualquiera (se vuelve host) | Crea una sala nueva. `starsPerParticipant` define cuántas estrellas tiene cada participante para repartir en el Nivel 5 (Ranking de estrellas) (mínimo 1, máximo 10). `secondsPerSpeaker` define cuántos segundos habla cada persona en el Nivel 4 antes de rotar (mínimo 30, máximo 300). Si no se envían, el servidor aplica los valores por defecto (`5` y `60` respectivamente). `avatarId` es opcional (ver `AVATAR_IDS` en sección 1); si no se envía o no es válido, queda `null`. `previousActionNotes` es texto libre opcional (máximo 2000 caracteres tras `.trim()`) mostrado en el Nivel 2; si no se envía, queda `""`. El servidor genera `code` y responde con `room:created`. |
 | `room:join` | `{ code: string, name: string, avatarId?: string, sessionToken?: string }` | Cualquiera | Une al participante a una sala existente, o lo reconecta. `sessionToken` es la credencial real de reconexión (ver sección 4) — si coincide con la de un participante ya existente, `name`/`avatarId` de este pedido se ignoran y se conserva la identidad original. Sin un `sessionToken` que matchee, es siempre alguien nuevo: si la sala sigue en `waiting_room`, se crea un participante (con `avatarId` opcional, ver `AVATAR_IDS` en sección 1; si no se envía o no es válido, queda `null`); si la sala ya avanzó de fase, el servidor responde `room:join_locked` en su lugar y no crea a nadie. |
+| `room:update_settings` | `{ starsPerParticipant: number }` | Solo host | Panel de configuración de la sala, accesible en cualquier nivel: cambia `starsPerParticipant` en caliente (mismo rango 1-10 que en `room:create`, obligatorio en este evento). No recalcula ni invalida votos ya emitidos — alguien que ya usó más estrellas que el nuevo máximo queda "sobregirado" sin que se le quite nada, simplemente no puede sumar más hasta bajar de ese máximo (ver "Cálculo de estrellas disponibles" más abajo). Las duraciones de fase y `secondsPerSpeaker` NO son editables después de `room:create` — quedan fijas para evitar tener que resolver qué pasa con un timer ya corriendo. |
+| `room:close` | `{}` | Solo host | Termina la sala para todos de inmediato: emite `room:closed` a todos los conectados, detiene los timers, y borra la sala del servidor sin esperar los timeouts de limpieza automática (ver back.md, sweepInactiveRooms). Es distinto de `room:leave`, que solo desconecta a quien lo pide sin afectar al resto. |
 | `phase:start_session` | `{}` | Solo host | Pasa de `waiting_room` a `welcome`, arranca el flujo. |
 | `phase:advance` | `{}` | Solo host | Cierra la fase actual y avanza a la siguiente. |
 | `phase:go_back` | `{}` | Solo host | Vuelve a la fase anterior según `phaseHistory`. |
+| `phase:set_previous_action_item` | `{ index: number, done: boolean }` | Cualquier participante conectado | Fija el estado (cumplido/no cumplido) de un ítem del Nivel 2 al valor exacto de `done` (ver "Tildes del Nivel 2" en sección 1). `error:invalid_action` si `index` está fuera de rango o `done` no es booleano. |
 | `timer:pause` | `{}` | Solo host | Pausa el timer de la fase actual. Durante `expression_round`, pausa `speakerTimer` en su lugar (ver "Rotación automática del Nivel 4"). |
 | `timer:resume` | `{}` | Solo host | Reanuda un timer pausado. Durante `expression_round`, reanuda `speakerTimer` en su lugar. |
 | `timer:add_time` | `{ seconds: number }` | Solo host | Suma (o resta, si `seconds` es negativo) tiempo al timer de la fase actual (ej: +5 min = `300`, -5 min = `-300`). El resultado se clampea a un mínimo de `0` en `remainingSeconds`/`durationSeconds`, nunca queda negativo. Sin efecto durante `expression_round` (no hay timer de fase en ese nivel). |
@@ -228,6 +251,7 @@ mismos datos que ya viajan en `room:state`.
 | `room:state` | `{ room: RoomState }` | Cada vez que cambia cualquier parte del estado (fase, timer, tarjetas, votos, participantes) | A todos los conectados a esa sala. **Excepción:** mientras `phase === "keep_improve_try"`, cada socket recibe una copia de `room` con `cards` filtrado a solo sus propias tarjetas de esa fase (ver sección 1, "Visibilidad de tarjetas durante keep_improve_try") — deja de ser un único payload idéntico para todos en ese momento puntual. |
 | `room:not_found` | `{ code: string }` | Si `room:join` usa un código inexistente | Solo a quien lo pidió |
 | `room:join_locked` | `{ code: string }` | Si `room:join` no trae un `sessionToken` válido y la sala ya no está en `waiting_room` (ver sección 4) | Solo a quien lo pidió |
+| `room:closed` | `{ code: string }` | El host emitió `room:close` | A todos los conectados a esa sala, antes de que el servidor corte su membership del room de socket.io |
 | `timer:tick` | `{ remainingSeconds: number }` | Cada segundo mientras el timer sigue `running` | A todos los conectados a esa sala. **Excepción:** el tick que hace que `remainingSeconds` llegue a `0` (y por lo tanto `timer.status` pasa a `finished`) se emite como `room:state` completo en su lugar, no como `timer:tick` — el cambio de `status` tiene que llegar al cliente para poder mostrar la alarma de fin de timer (ver front.md HU-F16), y `timer:tick` no lleva `status` en su payload. |
 | `speaker:tick` | `{ remainingSeconds: number }` | Cada segundo mientras `speakerTimer.status === "running"` (solo durante `expression_round`) | A todos los conectados a esa sala |
 | `error:unauthorized` | `{ action: string }` | Si un participante intenta una acción reservada al host | Solo a quien lo intentó |

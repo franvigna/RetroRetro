@@ -107,6 +107,62 @@ describe("RoomPage — recuperar sesión tras un refresh (HU-F13)", () => {
     expect(screen.queryByLabelText("Tu nombre")).not.toBeInTheDocument();
   });
 
+  it("room:join_locked corta la pantalla de reconexión cuando había una identidad guardada", () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ code: "RETRO-AB12", name: "Ana", avatarId: null, sessionToken: "token-expirado" })
+    );
+    renderRoomRoute("RETRO-AB12");
+
+    act(() => {
+      mockSocket.trigger("connect");
+      mockSocket.trigger("room:join_locked", { code: "RETRO-AB12" });
+    });
+
+    expect(screen.getByRole("heading", { name: "SALA CERRADA" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "RECONECTANDO" })).not.toBeInTheDocument();
+  });
+
+  it("'SALA CERRADA' tiene un botón para volver al inicio", () => {
+    render(
+      <MemoryRouter initialEntries={["/room/RETRO-AB12"]}>
+        <RoomProvider>
+          <Routes>
+            <Route path="/" element={<div data-testid="landing">LANDING</div>} />
+            <Route path="/room/:code" element={<RoomPage />} />
+          </Routes>
+        </RoomProvider>
+      </MemoryRouter>
+    );
+    act(() => {
+      mockSocket.trigger("connect");
+      mockSocket.trigger("room:join_locked", { code: "RETRO-AB12" });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Volver al inicio/ }));
+    expect(screen.getByTestId("landing")).toBeInTheDocument();
+  });
+
+  it("'RECONECTAR' (sin identidad guardada) tiene un botón para volver al inicio", () => {
+    render(
+      <MemoryRouter initialEntries={["/room/RETRO-AB12"]}>
+        <RoomProvider>
+          <Routes>
+            <Route path="/" element={<div data-testid="landing">LANDING</div>} />
+            <Route path="/room/:code" element={<RoomPage />} />
+          </Routes>
+        </RoomProvider>
+      </MemoryRouter>
+    );
+    act(() => {
+      mockSocket.trigger("connect");
+    });
+
+    expect(screen.getByRole("heading", { name: "RECONECTAR" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Volver al inicio/ }));
+    expect(screen.getByTestId("landing")).toBeInTheDocument();
+  });
+
   it("si la sala guardada ya no existe, limpia la identidad y no reintenta en loop", () => {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ code: "RETRO-DEAD", name: "Ana", avatarId: null }));
 

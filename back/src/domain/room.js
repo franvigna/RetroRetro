@@ -29,15 +29,30 @@ export function resolveAvatarId(value) {
   return AVATAR_IDS.includes(value) ? value : null;
 }
 
-export function resolveStarsPerParticipant(value) {
+export function resolveStarsPerParticipant(value, action = "room:create") {
   if (value === undefined) return DEFAULT_STARS_PER_PARTICIPANT;
   if (!Number.isInteger(value) || value < MIN_STARS_PER_PARTICIPANT || value > MAX_STARS_PER_PARTICIPANT) {
     throw new InvalidActionError(
-      "room:create",
+      action,
       `starsPerParticipant debe ser un entero entre ${MIN_STARS_PER_PARTICIPANT} y ${MAX_STARS_PER_PARTICIPANT}`
     );
   }
   return value;
+}
+
+// room:update_settings (ver back.md, panel de configuración del host): a
+// diferencia de room:create, acá starsPerParticipant es obligatorio — no
+// tiene sentido "no cambiar nada" en un evento de actualización — y no toca
+// los votos ya emitidos (ver domain/cards.js, toggleVote sigue validando solo
+// al AGREGAR un voto nuevo: alguien que ya usó más estrellas que el nuevo
+// máximo queda "sobregirado" sin que se le borre nada, decisión de producto
+// para no mover resultados de la votación sin que la persona lo decida).
+export function updateRoomSettings(room, { starsPerParticipant }) {
+  if (starsPerParticipant === undefined) {
+    throw new InvalidActionError("room:update_settings", "starsPerParticipant es obligatorio");
+  }
+  const resolvedStars = resolveStarsPerParticipant(starsPerParticipant, "room:update_settings");
+  return { ...room, starsPerParticipant: resolvedStars };
 }
 
 export function resolveSecondsPerSpeaker(value) {
@@ -106,6 +121,10 @@ export function createRoom({
     secondsPerSpeaker: resolvedSecondsPerSpeaker,
     speakerTimer: null,
     previousActionNotes: resolvedPreviousActionNotes,
+    // Estado efímero de los tildes del Nivel 2 (ver domain/previousAction.js)
+    // — { [índice de línea]: boolean }. Igual que el resto de la sala, no
+    // persiste entre sesiones.
+    previousActionChecks: {},
     createdAt: now,
   };
 }

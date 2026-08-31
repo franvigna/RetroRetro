@@ -12,6 +12,7 @@ import { HallOfFame } from "../components/HallOfFame.jsx";
 import { TimerFinishedBanner } from "../components/TimerFinishedBanner.jsx";
 import { SpeakerRotationWarning } from "../components/SpeakerRotationWarning.jsx";
 import { PreviousActionPanel } from "../components/PreviousActionPanel.jsx";
+import { RoomSettingsPanel } from "../components/RoomSettingsPanel.jsx";
 import { PHASE_THEMES, CARD_COLUMNS_BY_PHASE } from "../domain/phaseThemes.js";
 
 const SPEAKER_ROTATION_WARNING_THRESHOLD_SECONDS = 5;
@@ -30,11 +31,15 @@ export function ActivePhasePage() {
     deleteCard,
     setSpeaker,
     clearSpeaker,
+    setPreviousActionItem,
+    updateRoomSettings,
+    closeRoom,
   } = useRoomEvents();
   const remainingVotes = useRemainingVotes(room, currentParticipantId);
 
   const starsHeaderRef = useRef(null);
   const [flyingStar, setFlyingStar] = useState(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const me = room.participants.find((p) => p.id === currentParticipantId);
   const isHost = me?.role === "host";
@@ -75,8 +80,22 @@ export function ActivePhasePage() {
 
   return (
     <div className="page page-wide">
-      <h1 className="brand-title pixel-text">{theme.title}</h1>
-      <p className="brand-tagline">{theme.subtitle}</p>
+      <div className="btn-row" style={{ width: "100%", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}>
+          <h1 className="brand-title pixel-text">{theme.title}</h1>
+          <p className="brand-tagline">{theme.subtitle}</p>
+        </div>
+        {isHost && (
+          <button
+            type="button"
+            className="card-item-action-btn"
+            aria-label="Configuración de la sala"
+            onClick={() => setSettingsOpen(true)}
+          >
+            ⚙
+          </button>
+        )}
+      </div>
 
       <div className="cabinet" style={{ width: "100%" }}>
         <div className="cabinet-bezel" />
@@ -96,14 +115,22 @@ export function ActivePhasePage() {
 
         {room.phase === "welcome" && (
           <p>
-            Bienvenidos a la partida. En cada nivel vas a tener un tiempo límite visible para
-            todos: cuando el timer llegue a cero, el anfitrión avanza al siguiente nivel. Sumá
-            tarjetas cuando el nivel lo pida y repartí tus estrellas de puntaje en el nivel de
-            votación.
+            Bienvenidos a RetroRetro: la retrospectiva del equipo, con estética retro. La sesión
+            avanza en niveles: en cada uno vas a tener un tiempo límite visible para todos, y
+            cuando se cumple, el anfitrión avanza al siguiente. Vamos a repasar qué funcionó, qué
+            mejorar y qué probar, darle a cada uno su turno para opinar, votar entre todos lo más
+            importante, y cerrar con un plan de acción concreto. ¡Que empiece el juego!
           </p>
         )}
 
-        {room.phase === "previous_action" && <PreviousActionPanel notes={room.previousActionNotes} />}
+        {room.phase === "previous_action" && (
+          <PreviousActionPanel
+            notes={room.previousActionNotes}
+            checks={room.previousActionChecks}
+            onSetItem={setPreviousActionItem}
+            canToggle
+          />
+        )}
 
         {isExpressionRound && (
           <>
@@ -175,6 +202,15 @@ export function ActivePhasePage() {
           from={flyingStar.from}
           to={flyingStar.to}
           onDone={() => setFlyingStar(null)}
+        />
+      )}
+
+      {settingsOpen && (
+        <RoomSettingsPanel
+          room={room}
+          onUpdateSettings={updateRoomSettings}
+          onCloseRoom={closeRoom}
+          onDismiss={() => setSettingsOpen(false)}
         />
       )}
     </div>

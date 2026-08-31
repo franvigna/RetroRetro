@@ -159,6 +159,11 @@
   box-shadow: none;
 }
 
+.btn-danger {
+  background: var(--color-red);
+  color: var(--color-text);
+}
+
 .btn-block {
   width: 100%;
 }
@@ -665,6 +670,25 @@
   display: none;
 }
 
+.room-closed-banner {
+  width: 100%;
+  text-align: center;
+  padding: 0.6rem 2.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--color-bg-alt);
+  color: var(--color-red);
+  border-bottom: var(--border-width-thin) solid var(--color-red);
+  position: relative;
+}
+
+.room-closed-banner .card-item-action-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* ===== Errores ===== */
 .error-banner {
   width: 100%;
@@ -923,6 +947,84 @@
   margin: 0;
 }
 
+.previous-action-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.previous-action-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.5rem 0.6rem;
+  border-left: 4px solid transparent;
+  border-radius: 2px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.previous-action-item[data-status="done"] {
+  background: rgba(57, 255, 20, 0.12);
+  border-left-color: var(--color-green);
+}
+
+.previous-action-item[data-status="not_done"] {
+  background: rgba(255, 70, 85, 0.12);
+  border-left-color: var(--color-red);
+}
+
+.previous-action-item-text {
+  word-break: break-word;
+}
+
+.previous-action-item-buttons {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* Dos botones separados y siempre visibles (✕ / ✓): el que representa el
+   estado actual del ítem se ve "encendido" (relleno), el otro queda apagado
+   (solo contorno) — nunca un único botón que alterna de ícono. */
+.previous-action-toggle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: var(--border-width-thin) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-faint);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.1s ease, color 0.1s ease;
+}
+
+.previous-action-toggle:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.previous-action-toggle:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.previous-action-toggle-no[aria-pressed="true"] {
+  background: var(--color-red);
+  border-color: var(--color-red);
+  color: var(--color-text);
+}
+
+.previous-action-toggle-yes[aria-pressed="true"] {
+  background: var(--color-green);
+  border-color: var(--color-green);
+  color: var(--color-bg);
+}
+
 /* ===== Salón de la Fama (Nivel 6) — ranking de solo lectura ===== */
 .hall-of-fame {
   list-style: none;
@@ -1078,4 +1180,46 @@
   accent-color: var(--color-magenta);
   width: 1.1rem;
   height: 1.1rem;
+}
+
+/* ===== Panel de configuración de la sala (host, cualquier nivel) ===== */
+.room-settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 10, 26, 0.85);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.5rem 1rem;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.room-settings-panel {
+  width: 100%;
+  max-width: 28rem;
+  margin-top: 1.5rem;
+}
+
+.room-settings-readonly {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: var(--border-width-thin) dashed var(--color-border);
+}
+
+.room-settings-durations-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--color-text-dim);
+  font-size: 0.9rem;
+}
+
+.room-settings-danger-zone {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: var(--border-width-thin) dashed var(--color-red);
 }

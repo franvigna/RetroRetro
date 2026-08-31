@@ -9,18 +9,23 @@ const { RoomProvider, useRoom, CONNECTION_STATUS } = await import("./RoomContext
 const { ConnectionBanner } = await import("../components/ConnectionBanner.jsx");
 
 function Probe() {
-  const { connectionStatus, room, currentParticipantId, leaveRoom, createRoom } = useRoom();
+  const { connectionStatus, room, currentParticipantId, leaveRoom, createRoom, roomClosed, clearRoomClosed } =
+    useRoom();
   return (
     <>
       <ConnectionBanner status={connectionStatus} />
       <span data-testid="phase">{room?.phase ?? "sin-room"}</span>
       <span data-testid="participant-id">{currentParticipantId ?? "sin-id"}</span>
       <span data-testid="speaker-remaining">{room?.speakerTimer?.remainingSeconds ?? "sin-speaker-timer"}</span>
+      <span data-testid="room-closed">{String(roomClosed)}</span>
       <button type="button" onClick={leaveRoom}>
         salir
       </button>
       <button type="button" onClick={() => createRoom({ hostName: "Cisco" })}>
         crear
+      </button>
+      <button type="button" onClick={clearRoomClosed}>
+        limpiar-cierre
       </button>
     </>
   );
@@ -189,5 +194,39 @@ describe("RoomContext — estados de conexión del socket (mockeado)", () => {
     expect(mockSocket.emit).toHaveBeenCalledWith("room:leave");
     expect(screen.getByTestId("phase")).toHaveTextContent("sin-room");
     expect(screen.getByTestId("participant-id")).toHaveTextContent("sin-id");
+  });
+
+  it("room:closed limpia room/currentParticipantId/identidad y marca roomClosed", () => {
+    sessionStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ code: "RETRO-AB12", name: "Ana", avatarId: null, sessionToken: "token-de-ana" })
+    );
+    renderProbe();
+    act(() => {
+      mockSocket.trigger("connect");
+      mockSocket.trigger("room:joined", { participantId: "part-1" });
+      mockSocket.trigger("room:state", { room: { code: "RETRO-AB12", phase: "welcome", cards: [], participants: [] } });
+    });
+    expect(screen.getByTestId("phase")).toHaveTextContent("welcome");
+
+    act(() => {
+      mockSocket.trigger("room:closed", { code: "RETRO-AB12" });
+    });
+
+    expect(screen.getByTestId("room-closed")).toHaveTextContent("true");
+    expect(screen.getByTestId("phase")).toHaveTextContent("sin-room");
+    expect(screen.getByTestId("participant-id")).toHaveTextContent("sin-id");
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  it("clearRoomClosed vuelve roomClosed a false", () => {
+    renderProbe();
+    act(() => {
+      mockSocket.trigger("room:closed", { code: "RETRO-AB12" });
+    });
+    expect(screen.getByTestId("room-closed")).toHaveTextContent("true");
+
+    fireEvent.click(screen.getByRole("button", { name: "limpiar-cierre" }));
+    expect(screen.getByTestId("room-closed")).toHaveTextContent("false");
   });
 });

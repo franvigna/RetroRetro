@@ -106,13 +106,16 @@ test("E2E-COMPLETO-03: reconexión durante una sesión activa conserva el voto p
   await participantPage.getByRole("button", { name: "Dar tu estrella a esta tarjeta" }).first().click();
   await expect(participantPage.getByRole("button", { name: "Quitar tu estrella de esta tarjeta" }).first()).toBeVisible();
 
-  // Simula corte de conexión: cerrar y reabrir con el mismo código y nombre.
+  // Simula cerrar y restaurar la misma sesión de navegador conservando la
+  // credencial privada que la app guarda en sessionStorage.
+  const storedIdentity = await participantPage.evaluate(() => sessionStorage.getItem("retroretro:identity"));
   await participantPage.close();
   await hostPage.waitForTimeout(500); // margen para que el servidor procese el evento disconnect
   const reconnectedPage = await participantContext.newPage();
+  await reconnectedPage.addInitScript((identity) => {
+    sessionStorage.setItem("retroretro:identity", identity);
+  }, storedIdentity);
   await reconnectedPage.goto(`/room/${code}`);
-  await reconnectedPage.getByLabel("Tu nombre").fill("Ana");
-  await reconnectedPage.getByRole("button", { name: "▶ Entrar" }).click();
 
   await expect(reconnectedPage.getByText("Ranking de estrellas")).toBeVisible();
   await expect(reconnectedPage.getByRole("button", { name: "Quitar tu estrella de esta tarjeta" }).first()).toBeVisible();

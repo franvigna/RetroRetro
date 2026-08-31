@@ -7,6 +7,7 @@ import {
   generateSessionToken,
   toPublicRoom,
   isRoomLockedForNewJoins,
+  updateRoomSettings,
   AVATAR_IDS,
   PREVIOUS_ACTION_NOTES_MAX_LENGTH,
 } from "../src/domain/room.js";
@@ -83,6 +84,32 @@ describe("createRoom", () => {
     expect(() => createRoom({ ...baseArgs, starsPerParticipant: 0 })).toThrow(InvalidActionError);
     expect(() => createRoom({ ...baseArgs, starsPerParticipant: 11 })).toThrow(InvalidActionError);
     expect(() => createRoom({ ...baseArgs, starsPerParticipant: 2.5 })).toThrow(InvalidActionError);
+  });
+});
+
+describe("updateRoomSettings", () => {
+  const room = createRoom(baseArgs);
+
+  it("actualiza starsPerParticipant dentro de 1-10", () => {
+    const next = updateRoomSettings(room, { starsPerParticipant: 8 });
+    expect(next.starsPerParticipant).toBe(8);
+  });
+
+  it("no toca el resto del estado de la sala", () => {
+    const next = updateRoomSettings(room, { starsPerParticipant: 3 });
+    expect(next.code).toBe(room.code);
+    expect(next.cards).toBe(room.cards);
+    expect(next.phaseDurations).toBe(room.phaseDurations);
+  });
+
+  it("rechaza starsPerParticipant ausente (a diferencia de createRoom, acá es obligatorio)", () => {
+    expect(() => updateRoomSettings(room, {})).toThrow(InvalidActionError);
+  });
+
+  it("rechaza starsPerParticipant fuera de rango o no entero", () => {
+    expect(() => updateRoomSettings(room, { starsPerParticipant: 0 })).toThrow(InvalidActionError);
+    expect(() => updateRoomSettings(room, { starsPerParticipant: 11 })).toThrow(InvalidActionError);
+    expect(() => updateRoomSettings(room, { starsPerParticipant: 2.5 })).toThrow(InvalidActionError);
   });
 
   it("guarda avatarId null si no se pasa ninguno", () => {

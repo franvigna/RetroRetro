@@ -1,15 +1,18 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRoom } from "../context/RoomContext.jsx";
 import { useRoomEvents } from "../hooks/useRoomEvents.js";
+import { RoomSettingsPanel } from "../components/RoomSettingsPanel.jsx";
 import { PHASE_THEMES } from "../domain/phaseThemes.js";
 import { generateActionPlanPdf, buildActionPlanFilename } from "../domain/exportPdf.js";
 import { getAvatarById } from "../domain/avatars.js";
 
 export function ClosingPage() {
   const { room, leaveRoom, currentParticipantId } = useRoom();
-  const { goBackPhase } = useRoomEvents();
+  const { goBackPhase, updateRoomSettings, closeRoom } = useRoomEvents();
   const navigate = useNavigate();
   const theme = PHASE_THEMES.closing;
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const me = room.participants.find((p) => p.id === currentParticipantId);
   const isHost = me?.role === "host";
@@ -30,8 +33,22 @@ export function ClosingPage() {
 
   return (
     <div className="page page-wide">
-      <h1 className="brand-title pixel-text">{theme.title}</h1>
-      <p className="brand-tagline">{theme.subtitle}</p>
+      <div className="btn-row" style={{ width: "100%", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}>
+          <h1 className="brand-title pixel-text">{theme.title}</h1>
+          <p className="brand-tagline">{theme.subtitle}</p>
+        </div>
+        {isHost && (
+          <button
+            type="button"
+            className="card-item-action-btn"
+            aria-label="Configuración de la sala"
+            onClick={() => setSettingsOpen(true)}
+          >
+            ⚙
+          </button>
+        )}
+      </div>
 
       <div className="cabinet" style={{ width: "100%" }}>
         <div className="cabinet-bezel" />
@@ -91,6 +108,15 @@ export function ClosingPage() {
           ▶ Volver al inicio
         </button>
       </div>
+
+      {settingsOpen && (
+        <RoomSettingsPanel
+          room={room}
+          onUpdateSettings={updateRoomSettings}
+          onCloseRoom={closeRoom}
+          onDismiss={() => setSettingsOpen(false)}
+        />
+      )}
     </div>
   );
 }
