@@ -232,6 +232,7 @@ mismos datos que ya viajan en `room:state`.
 | `speaker:tick` | `{ remainingSeconds: number }` | Cada segundo mientras `speakerTimer.status === "running"` (solo durante `expression_round`) | A todos los conectados a esa sala |
 | `error:unauthorized` | `{ action: string }` | Si un participante intenta una acción reservada al host | Solo a quien lo intentó |
 | `error:invalid_action` | `{ action: string, reason: string }` | Ej: votar una tarjeta que no existe, agregar texto vacío, intentar asignar una estrella sin tener disponibles | Solo a quien lo intentó |
+| `error:rate_limited` | `{ action: string }` | Un mismo socket supera el límite de frecuencia de `room:create`, `room:join`, `card:add`, `card:edit`, `card:delete` o `card:vote` (ver back.md, protección contra abuso) | Solo a quien lo intentó |
 | `participant:disconnected` | `{ participantId: string }` | Cuando alguien pierde conexión | A todos los conectados a esa sala |
 
 **Decisión de diseño:** se emite `room:state` con el estado completo en vez de eventos
@@ -270,9 +271,10 @@ un servidor lleno (ver front.md, estado de conexión `SERVER_FULL`).
   identidad anterior — se entra como alguien nuevo. Es la contraparte necesaria de cerrar la
   suplantación de identidad; para un equipo chico y de confianza como Jaliscom el costo es bajo.
 - El servidor mantiene al participante en `RoomState.participants` con `connected: false` por un
-  tiempo de gracia (sugerido: 5 minutos) antes de removerlo definitivamente, para tolerar cortes
-  de red cortos sin perder su nombre ni sus votos previos. Reconectarse con el `sessionToken`
-  correcto funciona en cualquier fase, incluso después de `waiting_room` (ver el punto siguiente).
+  tiempo de gracia (15 minutos, ver `RECONNECT_GRACE_MS` en `back/src/socket/index.js`) antes de
+  removerlo definitivamente, para tolerar cortes de red cortos sin perder su nombre ni sus votos
+  previos. Reconectarse con el `sessionToken` correcto funciona en cualquier fase, incluso después
+  de `waiting_room` (ver el punto siguiente).
 - **La sala se cierra a gente nueva una vez que arrancó.** Mientras `RoomState.phase` sigue en
   `waiting_room`, `room:join` sin un `sessionToken` válido da de alta a un participante nuevo como
   siempre. Apenas la fase avanza, ese mismo pedido responde `room:join_locked` en su lugar — solo

@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import { UnauthorizedError, InvalidActionError } from "../domain/errors.js";
+import { UnauthorizedError, InvalidActionError, RateLimitedError } from "../domain/errors.js";
 import { advanceSpeaker } from "../domain/turns.js";
 import { toPublicRoom } from "../domain/room.js";
 import * as roomStore from "../rooms/roomStore.js";
@@ -9,8 +9,9 @@ import { registerTimerHandlers } from "./handlers/timerHandlers.js";
 import { registerCardHandlers } from "./handlers/cardHandlers.js";
 import { registerTurnHandlers } from "./handlers/turnHandlers.js";
 import { startTimerLoop, stopTimerLoop, startSpeakerTimerLoop, stopSpeakerTimerLoop } from "./timerLoop.js";
+import { clearRateLimits } from "./rateLimiter.js";
 
-const RECONNECT_GRACE_MS = 5 * 60 * 1000;
+const RECONNECT_GRACE_MS = 15 * 60 * 1000;
 
 // Tope duro de conexiones simultáneas para todo el servidor (no por sala) —
 // protege el plan gratuito de Render (CPU/memoria limitadas) de un pico de
@@ -67,6 +68,8 @@ export function setupSocket(httpServer, corsOrigin, { maxConnections = DEFAULT_M
       socket.emit("error:unauthorized", { action });
     } else if (err instanceof InvalidActionError) {
       socket.emit("error:invalid_action", { action, reason: err.reason });
+    } else if (err instanceof RateLimitedError) {
+      socket.emit("error:rate_limited", { action });
     } else {
       throw err;
     }
@@ -132,6 +135,7 @@ export function setupSocket(httpServer, corsOrigin, { maxConnections = DEFAULT_M
     registerTurnHandlers(io, socket, ctx);
 
     socket.on("disconnect", () => {
+      clearRateLimits(socket.id);
       const { code, participantId } = socket.data;
       if (!code) return;
       const room = roomStore.get(code);

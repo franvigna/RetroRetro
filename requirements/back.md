@@ -22,8 +22,8 @@ ver `shared-contract.md`).
    `setInterval` del cliente): al iniciar una fase, arrancar una cuenta regresiva server-side y
    emitir `timer:tick` cada segundo a la sala.
 5. Manejar reconexiones: si un socket se desconecta, marcar al participante como
-   `connected: false` en vez de eliminarlo inmediatamente, y darle una ventana de tiempo (sugerido:
-   5 minutos) para reconectar antes de removerlo definitivamente de la sala.
+   `connected: false` en vez de eliminarlo inmediatamente, y darle una ventana de tiempo (15
+   minutos) para reconectar antes de removerlo definitivamente de la sala.
 6. Liberar de memoria las salas completamente inactivas (ej: sin ningún participante conectado
    durante más de X tiempo) para no acumular estado infinito en el proceso mientras esté vivo.
 

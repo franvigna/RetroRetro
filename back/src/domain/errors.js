@@ -14,3 +14,11 @@ export class InvalidActionError extends Error {
     this.reason = reason;
   }
 }
+
+export class RateLimitedError extends Error {
+  constructor(action) {
+    super(`rate_limited: ${action}`);
+    this.name = "RateLimitedError";
+    this.action = action;
+  }
+}

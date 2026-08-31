@@ -1,14 +1,24 @@
 import { createRoom, resolveAvatarId, generateSessionToken, toPublicRoom, isRoomLockedForNewJoins } from "../../domain/room.js";
-import { InvalidActionError } from "../../domain/errors.js";
+import { InvalidActionError, RateLimitedError } from "../../domain/errors.js";
 import { generateRoomCode } from "../../rooms/codeGenerator.js";
 import * as roomStore from "../../rooms/roomStore.js";
 import { stopTimerLoop, stopSpeakerTimerLoop } from "../timerLoop.js";
+import { isRateLimited } from "../rateLimiter.js";
+
+// room:join tolera más frecuencia (reconexiones automáticas legítimas tras
+// cortes de red), room:create es más restrictivo — crear salas sin límite
+// permite agotar la memoria del servidor con salas vacías (ver rateLimiter.js).
+const CREATE_LIMIT = { max: 5, windowMs: 60_000 };
+const JOIN_LIMIT = { max: 20, windowMs: 10_000 };
 
 export function registerRoomHandlers(io, socket, { broadcastRoomState, emitError }) {
   socket.on(
     "room:create",
     ({ hostName, phaseDurations, starsPerParticipant, secondsPerSpeaker, avatarId, previousActionNotes } = {}) => {
       try {
+        if (isRateLimited(socket.id, "room:create", CREATE_LIMIT)) {
+          throw new RateLimitedError("room:create");
+        }
         const code = generateRoomCode((c) => roomStore.has(c));
         const room = createRoom({
           code,
@@ -36,6 +46,11 @@ export function registerRoomHandlers(io, socket, { broadcastRoomState, emitError
   );
 
   socket.on("room:join", ({ code, name, avatarId, sessionToken } = {}) => {
+    if (isRateLimited(socket.id, "room:join", JOIN_LIMIT)) {
+      emitError(socket, "room:join", new RateLimitedError("room:join"));
+      return;
+    }
+
     const room = roomStore.get(code);
     if (!room) {
       socket.emit("room:not_found", { code });

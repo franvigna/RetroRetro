@@ -154,6 +154,13 @@ export function RoomProvider({ children }) {
       setLastError({ type: "invalid_action", ...payload });
     }
 
+    // El servidor frena eventos repetidos en muy poco tiempo (spam de
+    // tarjetas/votos/joins) — ver back/src/socket/rateLimiter.js. En uso
+    // normal esto no debería dispararse nunca.
+    function handleRateLimited(payload) {
+      setLastError({ type: "rate_limited", ...payload });
+    }
+
     socket.on("connect", handleConnect);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
@@ -166,6 +173,7 @@ export function RoomProvider({ children }) {
     socket.on("speaker:tick", handleSpeakerTick);
     socket.on("error:unauthorized", handleUnauthorized);
     socket.on("error:invalid_action", handleInvalidAction);
+    socket.on("error:rate_limited", handleRateLimited);
 
     if (!socket.connected) {
       socket.connect();
@@ -186,6 +194,7 @@ export function RoomProvider({ children }) {
       socket.off("speaker:tick", handleSpeakerTick);
       socket.off("error:unauthorized", handleUnauthorized);
       socket.off("error:invalid_action", handleInvalidAction);
+      socket.off("error:rate_limited", handleRateLimited);
     };
   }, []);
 
