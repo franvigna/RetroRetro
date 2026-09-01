@@ -120,13 +120,13 @@ export function toggleVote(room, { cardId, participantId }) {
   return { ...room, cards: newCards };
 }
 
-// Top 3 del Salón de la Fama (Nivel 6): ordena por votes.length descendente. Si hay empate
-// en el límite del 3er puesto, incluye TODAS las tarjetas empatadas (puede devolver más de 3).
-export function topVotedCards(cards, limit = 3) {
-  if (cards.length === 0) return [];
-  const sorted = [...cards].sort((a, b) => b.votes.length - a.votes.length);
-  if (sorted.length <= limit) return sorted;
-
-  const cutoffVotes = sorted[limit - 1].votes.length;
-  return sorted.filter((c) => c.votes.length >= cutoffVotes);
+// Top 10 del Salón de la Fama con ranking denso: tarjetas con igual cantidad
+// de votos comparten puesto (1, 1, 2, 2...), incluyendo todos los empates
+// que correspondan al décimo puntaje distinto.
+export function topVotedCards(cards, maxRank = 10) {
+  const votedCards = cards.filter((card) => card.votes.length > 0);
+  if (votedCards.length === 0) return [];
+  const sorted = [...votedCards].sort((a, b) => b.votes.length - a.votes.length);
+  const topVoteCounts = [...new Set(sorted.map((card) => card.votes.length))].slice(0, maxRank);
+  return sorted.filter((card) => topVoteCounts.includes(card.votes.length));
 }

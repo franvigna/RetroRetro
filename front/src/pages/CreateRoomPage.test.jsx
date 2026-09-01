@@ -21,6 +21,10 @@ function renderPage() {
 
 function goToDurationsStep() {
   fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Cisco" } });
+  const avatarButton = screen.getByLabelText("Cisco");
+  if (avatarButton.getAttribute("aria-pressed") !== "true") {
+    fireEvent.click(avatarButton);
+  }
   fireEvent.click(screen.getByText(/Siguiente/));
 }
 
@@ -40,6 +44,14 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
     fireEvent.click(screen.getByText(/Siguiente/));
     expect(screen.getByText(/Ingresá tu nombre/)).toBeInTheDocument();
     // Seguimos en paso 1: el input de nombre de host sigue visible.
+    expect(screen.getByLabelText("Tu nombre")).toBeInTheDocument();
+  });
+
+  it("no avanza del paso 1 sin elegir un personaje", () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Cisco" } });
+    fireEvent.click(screen.getByText(/Siguiente/));
+    expect(screen.getByText(/Elegí un personaje para continuar/)).toBeInTheDocument();
     expect(screen.getByLabelText("Tu nombre")).toBeInTheDocument();
   });
 
@@ -91,7 +103,7 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
     );
     const payload = mockSocket.emit.mock.calls.find((call) => call[0] === "room:create")[1];
     expect(payload).not.toHaveProperty("focusTopic");
-    expect(payload.avatarId).toBeNull();
+    expect(payload.avatarId).toBe("cisco");
     expect(payload.phaseDurations).not.toHaveProperty("expression_round");
   });
 
@@ -119,37 +131,37 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
     );
   });
 
-  it("el paso de duraciones incluye el input de segundos por orador del Nivel 4, con default 60", () => {
+  it("el paso de duraciones incluye el input de segundos por orador del Nivel 4, con default 90", () => {
     renderPage();
     goToDurationsStep();
     expect(screen.getByText(/segundos por persona/)).toBeInTheDocument();
-    const speakerInput = screen.getByDisplayValue("60");
+    const speakerInput = screen.getByDisplayValue("90");
     expect(speakerInput).toHaveAttribute("min", "30");
     expect(speakerInput).toHaveAttribute("max", "300");
   });
 
-  it("emite room:create con secondsPerSpeaker por defecto (60) si no se toca ese input", () => {
+  it("emite room:create con secondsPerSpeaker por defecto (90) si no se toca ese input", () => {
     renderPage();
     goToStarsStep();
     fireEvent.click(screen.getByText(/Crear sala/));
 
     expect(mockSocket.emit).toHaveBeenCalledWith(
       "room:create",
-      expect.objectContaining({ secondsPerSpeaker: 60 })
+      expect.objectContaining({ secondsPerSpeaker: 90 })
     );
   });
 
   it("emite room:create con el secondsPerSpeaker elegido", () => {
     renderPage();
     goToDurationsStep();
-    const speakerInput = screen.getByDisplayValue("60");
-    fireEvent.change(speakerInput, { target: { value: "90" } });
+    const speakerInput = screen.getByDisplayValue("90");
+    fireEvent.change(speakerInput, { target: { value: "120" } });
     fireEvent.click(screen.getByText(/Siguiente/));
     fireEvent.click(screen.getByText(/Crear sala/));
 
     expect(mockSocket.emit).toHaveBeenCalledWith(
       "room:create",
-      expect.objectContaining({ secondsPerSpeaker: 90 })
+      expect.objectContaining({ secondsPerSpeaker: 120 })
     );
   });
 

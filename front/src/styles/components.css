@@ -336,6 +336,99 @@
   color: var(--color-violet);
 }
 
+/* ===== Guía de bienvenida (Nivel 1) ===== */
+.welcome-guide {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.welcome-guide-intro {
+  padding: 0.9rem 1rem;
+  border-left: 4px solid var(--color-cyan);
+  background: var(--color-bg-alt);
+}
+
+.welcome-guide-kicker {
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  color: var(--color-cyan);
+  letter-spacing: 0.08em;
+}
+
+.welcome-guide-intro h2 {
+  margin: 0.45rem 0;
+  font-family: var(--font-display);
+  font-size: clamp(0.82rem, 2vw, 1rem);
+  color: var(--color-yellow);
+}
+
+.welcome-guide-intro p {
+  margin: 0;
+  color: var(--color-text-dim);
+}
+
+.welcome-guide-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.welcome-guide-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-panel-raised);
+}
+
+.welcome-guide-icon {
+  color: var(--color-magenta);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.welcome-guide-steps strong,
+.welcome-guide-steps span:not(.welcome-guide-icon) {
+  display: block;
+}
+
+.welcome-guide-steps strong {
+  margin-bottom: 0.3rem;
+  color: var(--color-text);
+}
+
+.welcome-guide-steps div > span {
+  color: var(--color-text-dim);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.welcome-guide-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--color-yellow);
+  color: var(--color-text-dim);
+}
+
+.welcome-guide-footer strong {
+  color: var(--color-yellow);
+}
+
+@media (max-width: 600px) {
+  .welcome-guide-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== Cards / columnas =====
    Mobile: una sola columna apilada verticalmente (sin scroll horizontal).
    Notebook+: grid horizontal de 2-3 columnas según cuánto entre. */
@@ -430,6 +523,37 @@
   border-left-color: var(--color-yellow);
 }
 
+.card-edit-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px dashed var(--color-cyan);
+  background: var(--color-bg-alt);
+  color: var(--color-text-dim);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.card-item[data-speaker-card="true"] {
+  background: color-mix(in srgb, var(--color-panel-raised) 78%, var(--color-cyan));
+  box-shadow: 0 0 0 2px var(--color-cyan) inset, 0 0 14px rgb(62 240 255 / 30%);
+  transform: translateY(-1px);
+}
+
+.card-column[data-column="improve"] .card-item[data-speaker-card="true"] {
+  background: color-mix(in srgb, var(--color-panel-raised) 78%, var(--color-magenta));
+  box-shadow: 0 0 0 2px var(--color-magenta) inset, 0 0 14px rgb(255 62 165 / 30%);
+}
+
+.card-column[data-column="try"] .card-item[data-speaker-card="true"] {
+  background: color-mix(in srgb, var(--color-panel-raised) 78%, var(--color-yellow));
+  box-shadow: 0 0 0 2px var(--color-yellow) inset, 0 0 14px rgb(255 201 71 / 30%);
+}
+
 .card-item-editing {
   border-left-color: var(--color-cyan);
 }
@@ -464,6 +588,47 @@
 
 .card-item-action-btn:hover {
   color: var(--color-cyan);
+}
+
+.card-delete-confirmation {
+  position: absolute;
+  z-index: 10;
+  top: 1.8rem;
+  right: 0;
+  width: min(15rem, calc(100vw - 3rem));
+  padding: 0.65rem;
+  border: 1px solid var(--color-magenta);
+  background: var(--color-bg);
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 45%);
+  color: var(--color-text);
+  font-size: 0.72rem;
+}
+
+.card-delete-confirmation p {
+  margin: 0;
+}
+
+.card-delete-warning {
+  margin-top: 0.4rem !important;
+  color: var(--color-yellow);
+}
+
+.card-delete-confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.card-delete-confirmation-actions .btn {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.62rem;
+}
+
+.btn-danger {
+  border-color: var(--color-magenta);
+  background: var(--color-magenta);
+  color: var(--color-bg);
 }
 
 .card-item-text {
@@ -1069,6 +1234,42 @@
   flex-direction: column;
   gap: 0.3rem;
   min-width: 0;
+}
+
+.hof-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.hof-column-pill {
+  flex-shrink: 0;
+  padding: 0.22rem 0.45rem;
+  border: 1px solid currentColor;
+  font-family: var(--font-display);
+  font-size: 0.52rem;
+  line-height: 1.2;
+  background: var(--color-bg-alt);
+}
+
+.hof-column-pill[data-column="keep"] {
+  color: var(--color-cyan);
+}
+
+.hof-column-pill[data-column="improve"] {
+  color: var(--color-magenta);
+}
+
+.hof-column-pill[data-column="try"] {
+  color: var(--color-yellow);
+}
+
+@media (max-width: 480px) {
+  .hof-card-heading {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
 }
 
 /* ===== Formulario de plan de acción (Nivel 7 / Game Over) ===== */

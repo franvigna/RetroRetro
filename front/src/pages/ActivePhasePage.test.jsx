@@ -50,6 +50,19 @@ function renderRoom(socketId, room) {
   });
 }
 
+describe("ActivePhasePage — bienvenida", () => {
+  it("presenta las reglas como una guía visual dividida en pasos", () => {
+    renderRoom("part-1", baseRoom({ phase: "welcome" }));
+
+    expect(screen.getByRole("heading", { name: "La misión de esta partida" })).toBeInTheDocument();
+    expect(screen.getByText("Compartir")).toBeInTheDocument();
+    expect(screen.getByText("Escuchar")).toBeInTheDocument();
+    expect(screen.getByText("Priorizar")).toBeInTheDocument();
+    expect(screen.getByText("Actuar")).toBeInTheDocument();
+    expect(screen.getByText("⏱ Cada nivel tiene su propio tiempo")).toBeInTheDocument();
+  });
+});
+
 describe("ActivePhasePage — controles de host ocultos para participant", () => {
   beforeEach(() => {
     mockSocket.emit.mockClear();
@@ -180,6 +193,53 @@ describe("ActivePhasePage — expression_round (Turno de jugador)", () => {
     renderRoom("part-1", room);
     expect(screen.getByLabelText("Editar tarjeta")).toBeInTheDocument();
     expect(screen.getAllByLabelText("Editar tarjeta")).toHaveLength(1);
+  });
+
+  it("resalta únicamente las tarjetas de la persona que está hablando", () => {
+    const room = baseRoom({
+      phase: "expression_round",
+      currentSpeakerId: "part-1",
+      cards: [
+        { id: "c1", column: "keep", text: "Card del host", authorId: "host-1", votes: [] },
+        { id: "c2", column: "improve", text: "Card de Ana", authorId: "part-1", votes: [] },
+        { id: "c3", column: "try", text: "Otra de Ana", authorId: "part-1", votes: [] },
+      ],
+    });
+    renderRoom("host-1", room);
+
+    expect(screen.getByText("Card del host").closest("li")).not.toHaveAttribute("data-speaker-card");
+    expect(screen.getByText("Card de Ana").closest("li")).toHaveAttribute("data-speaker-card", "true");
+    expect(screen.getByText("Otra de Ana").closest("li")).toHaveAttribute("data-speaker-card", "true");
+  });
+});
+
+describe("ActivePhasePage — preguntas disparadoras", () => {
+  it("las muestra únicamente en el Nivel 3", () => {
+    renderRoom("part-1", baseRoom({ phase: "keep_improve_try" }));
+    expect(screen.getByText("¿Qué se puede mejorar?")).toBeInTheDocument();
+  });
+
+  it("las oculta en el Nivel 5 aunque muestre las columnas Keep/Improve/Try", () => {
+    renderRoom("part-1", baseRoom({ phase: "grouping_voting" }));
+    expect(screen.queryByText("¿Qué se puede mejorar?")).not.toBeInTheDocument();
+    expect(screen.getByText("Improve (Mejorar)")).toBeInTheDocument();
+  });
+});
+
+describe("ActivePhasePage — tip de edición", () => {
+  it("muestra debajo de las columnas que una tarjeta se puede editar con doble click", () => {
+    renderRoom("part-1", baseRoom({ phase: "keep_improve_try" }));
+    expect(screen.getByRole("note")).toHaveTextContent("Podés hacer doble click en una tarjeta para editarla.");
+  });
+
+  it("no muestra el tip durante la votación, donde la edición está deshabilitada", () => {
+    renderRoom("part-1", baseRoom({ phase: "grouping_voting" }));
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
+  it("no muestra el tip en el Nivel 7", () => {
+    renderRoom("part-1", baseRoom({ phase: "action_plan" }));
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 });
 

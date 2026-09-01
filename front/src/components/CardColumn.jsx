@@ -18,6 +18,8 @@ export function CardColumn({
   onVote,
   onEditCard,
   onDeleteCard,
+  showPrompts = true,
+  highlightedAuthorId = null,
 }) {
   const [text, setText] = useState("");
   const [touched, setTouched] = useState(false);
@@ -38,7 +40,7 @@ export function CardColumn({
   return (
     <div className="card-column" data-column={column}>
       <h3 className="card-column-title">{COLUMN_LABELS[column] || column}</h3>
-      {COLUMN_PROMPTS[column] && (
+      {showPrompts && COLUMN_PROMPTS[column] && (
         <ul className="card-column-prompts">
           {COLUMN_PROMPTS[column].map((prompt) => (
             <li key={prompt}>{prompt}</li>
@@ -86,6 +88,8 @@ export function CardColumn({
             isOwn={card.authorId === currentParticipantId}
             onEdit={onEditCard}
             onDelete={onDeleteCard}
+            warnCannotRecreate={!canAddCard && !showVote && !isActionPlan}
+            isHighlighted={Boolean(highlightedAuthorId) && card.authorId === highlightedAuthorId}
           />
         ))}
       </ul>

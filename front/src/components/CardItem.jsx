@@ -9,7 +9,8 @@ import { getAvatarById } from "../domain/avatars.js";
 // solo trae ids, nunca nombres.
 //
 // Edición/eliminación (HU-F09c): solo visibles si `isOwn` (soy el autor).
-// Lápiz o doble click habilitan edición inline; "X" elimina sin confirmación.
+// Lápiz o doble click habilitan edición inline; "X" abre una confirmación
+// pequeña antes de eliminar para evitar pérdidas accidentales.
 export function CardItem({
   card,
   authorName,
@@ -22,8 +23,11 @@ export function CardItem({
   isOwn,
   onEdit,
   onDelete,
+  warnCannotRecreate = false,
+  isHighlighted = false,
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [text, setText] = useState(card.text || "");
   const isActionPlan = card.column === "action_plan";
   const assignees = isActionPlan
@@ -35,6 +39,7 @@ export function CardItem({
 
   function startEditing() {
     if (!canEdit) return;
+    setIsConfirmingDelete(false);
     setText(card.text || "");
     setIsEditing(true);
   }
@@ -50,6 +55,11 @@ export function CardItem({
   function handleActionPlanEditSubmit(payload) {
     onEdit(card.id, card.column, payload);
     setIsEditing(false);
+  }
+
+  function confirmDelete() {
+    onDelete(card.id);
+    setIsConfirmingDelete(false);
   }
 
   if (isEditing && isActionPlan) {
@@ -91,7 +101,7 @@ export function CardItem({
   }
 
   return (
-    <li className="card-item" onDoubleClick={startEditing}>
+    <li className="card-item" data-speaker-card={isHighlighted ? "true" : undefined} onDoubleClick={startEditing}>
       {canEdit && (
         <div className="card-item-actions">
           <button
@@ -106,10 +116,27 @@ export function CardItem({
             type="button"
             className="card-item-action-btn"
             aria-label="Eliminar tarjeta"
-            onClick={() => onDelete(card.id)}
+            aria-expanded={isConfirmingDelete}
+            onClick={() => setIsConfirmingDelete((current) => !current)}
           >
             ✕
           </button>
+          {isConfirmingDelete && (
+            <div className="card-delete-confirmation" role="alert">
+              <p>¿Seguro que queres eliminar esta tarjeta?</p>
+              {warnCannotRecreate && (
+                <p className="card-delete-warning">En el Nivel 4 no se pueden agregar tarjetas nuevas.</p>
+              )}
+              <div className="card-delete-confirmation-actions">
+                <button type="button" className="btn btn-ghost" onClick={() => setIsConfirmingDelete(false)}>
+                  Cancelar
+                </button>
+                <button type="button" className="btn btn-danger" onClick={confirmDelete}>
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

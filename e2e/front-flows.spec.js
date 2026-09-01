@@ -40,6 +40,7 @@ test("E2E-F02b: el link de invitación copiado lleva directo al paso 2 (nombre) 
   // El paso 1 (código) se saltea: va directo al paso 2 con el código de la URL.
   await expect(participantPage.getByLabel("Código de sala")).not.toBeVisible();
   await participantPage.getByLabel("Tu nombre").fill("Ana");
+  await participantPage.getByRole("button", { name: "Licha", exact: true }).click();
   await participantPage.getByRole("button", { name: "▶ Entrar" }).click();
   await participantPage.waitForURL(`**/room/${code}`);
 
@@ -181,6 +182,7 @@ test("E2E-F09c: el autor puede editar (lápiz) y eliminar (X) su propia tarjeta;
   await expect(hostPage.getByText("Texto corregido")).toBeVisible();
 
   await hostPage.getByLabel("Eliminar tarjeta").click();
+  await hostPage.getByRole("button", { name: "Eliminar", exact: true }).click();
   await expect(hostPage.getByText("Texto corregido")).toHaveCount(0);
 
   await hostContext.close();
@@ -234,6 +236,7 @@ test("E2E-F07: unirse con código inexistente muestra error claro y vuelve al pa
   await page.getByLabel("Código de sala").fill("RETRO-ZZZZ");
   await page.getByRole("button", { name: "Siguiente ▶" }).click();
   await page.getByLabel("Tu nombre").fill("Nadie");
+  await page.getByRole("button", { name: "Licha", exact: true }).click();
   await page.getByRole("button", { name: "▶ Entrar" }).click();
 
   await expect(page.getByText(/No encontramos ninguna sala/)).toBeVisible();

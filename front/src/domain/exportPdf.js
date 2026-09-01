@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import { ARCADE_COLORS } from "./arcadePalette.js";
-import { PHASE_THEMES } from "./phaseThemes.js";
 import { formatDateShort } from "../utils/formatTime.js";
+import { getAvatarById } from "./avatars.js";
 
 const MARGIN_X = 40;
 const BOTTOM_MARGIN = 50;
@@ -31,6 +31,27 @@ function drawBezelStripe(doc, pageWidth) {
   }
 }
 
+function drawAvatar(doc, avatarId, x, y, size = 18) {
+  const avatar = getAvatarById(avatarId);
+  if (!avatar?.src) return false;
+  try {
+    doc.addImage(avatar.src, "PNG", x, y, size, size);
+    return true;
+  } catch {
+    // Si un entorno de test no transforma el asset a data URL, el PDF sigue
+    // siendo válido; en el build de Vite estos sprites pequeños van inline.
+    return false;
+  }
+}
+
+function drawPageFooter(doc, pageWidth, pageHeight) {
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...ARCADE_COLORS.textFaint);
+  doc.text("RETRORETRO • TABLERO DE COMPROMISOS", MARGIN_X, pageHeight - 22);
+  doc.text(`PÁGINA ${doc.getNumberOfPages()}`, pageWidth - MARGIN_X, pageHeight - 22, { align: "right" });
+}
+
 // Arma el PDF del plan de acción consolidado (pantalla Game Over) con la
 // estética arcade del resto de la app: mismo panel oscuro, mismo acento de
 // franjas de color arriba, mismos colores por elemento (magenta para el
@@ -43,39 +64,67 @@ export function generateActionPlanPdf(room, { now = new Date() } = {}) {
   const pageHeight = doc.internal.pageSize.getHeight();
 
   const host = room.participants.find((p) => p.role === "host");
-  const participantNames = room.participants.map((p) => p.name).join(", ");
   const actionCards = room.cards.filter((c) => c.column === "action_plan");
   const participantsById = Object.fromEntries(room.participants.map((p) => [p.id, p]));
 
   fillPageBackground(doc, pageWidth, pageHeight);
   drawBezelStripe(doc, pageWidth);
 
-  let y = STRIPE_HEIGHT + 44;
+  let y = STRIPE_HEIGHT + 38;
+
+  // Cabecera de tablero: el documento debe leerse primero como un plan de
+  // acción y no como una captura de la pantalla de cierre.
+  doc.setFillColor(...ARCADE_COLORS.panel);
+  doc.roundedRect(MARGIN_X, y - 18, pageWidth - MARGIN_X * 2, 68, 5, 5, "F");
+  doc.setFillColor(...ARCADE_COLORS.cyan);
+  doc.rect(MARGIN_X, y - 18, 5, 68, "F");
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(28);
-  doc.setTextColor(...ARCADE_COLORS.yellow);
-  doc.text(PHASE_THEMES.closing.title, pageWidth / 2, y, { align: "center" });
+  doc.setFontSize(24);
+  doc.setTextColor(...ARCADE_COLORS.cyan);
+  doc.text("PLAN DE ACCIÓN", MARGIN_X + 20, y + 5);
 
-  y += 20;
+  y += 23;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setTextColor(...ARCADE_COLORS.textDim);
-  doc.text(PHASE_THEMES.closing.subtitle, pageWidth / 2, y, { align: "center" });
+  doc.text("Compromisos concretos acordados por el equipo", MARGIN_X + 20, y);
 
-  y += 34;
+  y += 45;
   doc.setFontSize(10);
   doc.setTextColor(...ARCADE_COLORS.text);
   const metaLines = [
     `Sala: ${room.code}`,
     `Fecha: ${formatDateShort(now)}`,
     `Anfitrión: ${host?.name ?? "—"}`,
-    `Participantes: ${participantNames || "—"}`,
   ];
   for (const line of metaLines) {
     doc.text(line, MARGIN_X, y);
     y += 16;
   }
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...ARCADE_COLORS.textDim);
+  doc.text("EQUIPO", MARGIN_X, y);
+  y += 10;
+  let participantX = MARGIN_X;
+  for (const participant of room.participants) {
+    const avatarSize = 20;
+    const labelWidth = doc.getTextWidth(participant.name) + 34;
+    if (participantX + labelWidth > pageWidth - MARGIN_X) {
+      participantX = MARGIN_X;
+      y += 28;
+    }
+    doc.setFillColor(...ARCADE_COLORS.panel);
+    doc.roundedRect(participantX, y, labelWidth, 24, 3, 3, "F");
+    drawAvatar(doc, participant.avatarId, participantX + 3, y + 2, avatarSize);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...ARCADE_COLORS.text);
+    doc.text(participant.name, participantX + 27, y + 15);
+    participantX += labelWidth + 7;
+  }
+  if (room.participants.length > 0) y += 28;
 
   y += 10;
   doc.setDrawColor(...ARCADE_COLORS.border);
@@ -86,7 +135,7 @@ export function generateActionPlanPdf(room, { now = new Date() } = {}) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.setTextColor(...ARCADE_COLORS.cyan);
-  doc.text("PLAN DE ACCIÓN CONSOLIDADO", MARGIN_X, y);
+  doc.text("COMPROMISOS DEL EQUIPO", MARGIN_X, y);
   y += 24;
 
   if (actionCards.length === 0) {
@@ -94,6 +143,7 @@ export function generateActionPlanPdf(room, { now = new Date() } = {}) {
     doc.setFontSize(11);
     doc.setTextColor(...ARCADE_COLORS.textFaint);
     doc.text("No se guardaron acciones en esta partida.", MARGIN_X, y);
+    drawPageFooter(doc, pageWidth, pageHeight);
     return doc;
   }
 
@@ -109,13 +159,15 @@ export function generateActionPlanPdf(room, { now = new Date() } = {}) {
     doc.setFontSize(11);
     const textLines = doc.splitTextToSize(card.text, textWidth);
 
-    const topPadding = 16;
+    const topPadding = 14;
     const bottomPadding = 10;
-    const blockHeight = topPadding + textLines.length * lineHeight + lineHeight + bottomPadding;
+    const assigneeRowHeight = assigneeNames.length > 0 ? 24 : lineHeight;
+    const blockHeight = topPadding + textLines.length * lineHeight + assigneeRowHeight + bottomPadding;
 
     if (y + blockHeight > pageHeight - BOTTOM_MARGIN) {
       doc.addPage();
       fillPageBackground(doc, pageWidth, pageHeight);
+      drawBezelStripe(doc, pageWidth);
       y = 40;
     }
 
@@ -133,12 +185,30 @@ export function generateActionPlanPdf(room, { now = new Date() } = {}) {
       cardY += lineHeight;
     }
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...ARCADE_COLORS.cyan);
-    doc.text(assigneeText, MARGIN_X + 16, cardY);
+    if (assigneeNames.length > 0) {
+      let assigneeX = MARGIN_X + 16;
+      for (const assigneeId of card.assigneeIds || []) {
+        const participant = participantsById[assigneeId];
+        drawAvatar(doc, participant?.avatarId, assigneeX, cardY - 3, 16);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(...ARCADE_COLORS.cyan);
+        doc.text(participant?.name || "?", assigneeX + 20, cardY + 8);
+        assigneeX += doc.getTextWidth(participant?.name || "?") + 34;
+      }
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...ARCADE_COLORS.textFaint);
+      doc.text(assigneeText, MARGIN_X + 16, cardY);
+    }
 
     y += blockHeight + 14;
+  }
+
+  for (let page = 1; page <= doc.getNumberOfPages(); page++) {
+    doc.setPage(page);
+    drawPageFooter(doc, pageWidth, pageHeight);
   }
 
   return doc;

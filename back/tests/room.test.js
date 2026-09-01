@@ -127,9 +127,9 @@ describe("updateRoomSettings", () => {
     expect(room.participants[0].avatarId).toBeNull();
   });
 
-  it("usa el default de secondsPerSpeaker (60) si no se pasa", () => {
+  it("usa el default de secondsPerSpeaker (90) si no se pasa", () => {
     const room = createRoom(baseArgs);
-    expect(room.secondsPerSpeaker).toBe(60);
+    expect(room.secondsPerSpeaker).toBe(90);
   });
 
   it("acepta un secondsPerSpeaker válido dentro de 30-300", () => {
@@ -186,8 +186,8 @@ describe("resolvePreviousActionNotes", () => {
 });
 
 describe("resolveSecondsPerSpeaker", () => {
-  it("devuelve 60 por defecto si no se pasa valor", () => {
-    expect(resolveSecondsPerSpeaker(undefined)).toBe(60);
+  it("devuelve 90 por defecto si no se pasa valor", () => {
+    expect(resolveSecondsPerSpeaker(undefined)).toBe(90);
   });
 
   it("acepta valores dentro de 30-300", () => {

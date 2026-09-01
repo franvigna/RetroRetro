@@ -2,7 +2,7 @@ import { AVATARS } from "../domain/avatars.js";
 
 // Si todavía no hay ningún avatar cargado (ver avatars.js) no mostramos una
 // sección "Elegí un personaje" vacía y rota — directamente no renderiza nada.
-export function AvatarPicker({ value, onChange }) {
+export function AvatarPicker({ value, onChange, required = false, showError = false }) {
   function handleClick(avatarId) {
     onChange(value === avatarId ? null : avatarId);
   }
@@ -11,8 +11,8 @@ export function AvatarPicker({ value, onChange }) {
 
   return (
     <div className="field">
-      <span className="avatar-picker-label">Elegí un personaje (opcional)</span>
-      <div className="avatar-grid" role="group" aria-label="Elegí un personaje (opcional)">
+      <span className="avatar-picker-label">Elegí un personaje{required ? "" : " (opcional)"}</span>
+      <div className="avatar-grid" role="group" aria-label="Elegí un personaje">
         {AVATARS.map((avatar) => (
           <button
             key={avatar.id}
@@ -27,6 +27,7 @@ export function AvatarPicker({ value, onChange }) {
           </button>
         ))}
       </div>
+      {required && showError && !value && <span className="field-error">Elegí un personaje para continuar.</span>}
     </div>
   );
 }

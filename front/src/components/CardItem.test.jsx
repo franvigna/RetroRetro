@@ -107,7 +107,7 @@ describe("CardItem — edición y eliminación (HU-F09c)", () => {
     expect(screen.queryByLabelText(/Editar tarjeta/)).not.toBeInTheDocument();
   });
 
-  it("la X llama a onDelete con el id de la tarjeta, sin confirmación", () => {
+  it("la X pide confirmación y solo Eliminar llama a onDelete", () => {
     const onDelete = vi.fn();
     render(
       <ul>
@@ -123,7 +123,35 @@ describe("CardItem — edición y eliminación (HU-F09c)", () => {
       </ul>
     );
     fireEvent.click(screen.getByLabelText("Eliminar tarjeta"));
+    expect(screen.getByText("¿Seguro que queres eliminar esta tarjeta?")).toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Eliminar" }));
     expect(onDelete).toHaveBeenCalledWith("c1");
+  });
+
+  it("en Nivel 4 advierte que no se pueden volver a agregar tarjetas y permite cancelar", () => {
+    const onDelete = vi.fn();
+    render(
+      <ul>
+        <CardItem
+          card={simpleCard}
+          authorName="Cisco"
+          participantsById={participantsById}
+          participants={participants}
+          isOwn
+          onEdit={vi.fn()}
+          onDelete={onDelete}
+          warnCannotRecreate
+        />
+      </ul>
+    );
+
+    fireEvent.click(screen.getByLabelText("Eliminar tarjeta"));
+    expect(screen.getByText("En el Nivel 4 no se pueden agregar tarjetas nuevas.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it("editar una action_plan propia usa el formulario de acción concreta/responsables", () => {

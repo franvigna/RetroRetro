@@ -51,7 +51,7 @@ export function JoinRoomPage() {
   function handleSubmit(e) {
     e.preventDefault();
     setTouched(true);
-    if (!name.trim()) return;
+    if (!name.trim() || !avatarId) return;
     clearRoomLocked();
     joinRoom(code.trim().toUpperCase(), name.trim(), avatarId);
   }
@@ -111,7 +111,7 @@ export function JoinRoomPage() {
               />
               {nameError && <span className="field-error">Ingresá tu nombre.</span>}
             </div>
-            <AvatarPicker value={avatarId} onChange={setAvatarId} />
+            <AvatarPicker value={avatarId} onChange={setAvatarId} required showError={touched} />
 
             {roomLockedCode === code.trim().toUpperCase() && (
               <p className="error-banner">

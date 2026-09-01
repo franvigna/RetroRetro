@@ -57,17 +57,14 @@ describe("JoinRoomPage — flujo en dos pasos", () => {
     expect(mockSocket.emit).not.toHaveBeenCalledWith("room:join", expect.anything());
   });
 
-  it("emite room:join con código y nombre, avatarId null si no se eligió ninguno", () => {
+  it("no emite room:join si no se eligió un personaje", () => {
     renderPage();
     goToNameStep("retro-ab12");
     fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
     fireEvent.click(screen.getByText(/Entrar/));
 
-    expect(mockSocket.emit).toHaveBeenCalledWith("room:join", {
-      code: "RETRO-AB12",
-      name: "Ana",
-      avatarId: null,
-    });
+    expect(screen.getByText(/Elegí un personaje para continuar/)).toBeInTheDocument();
+    expect(mockSocket.emit).not.toHaveBeenCalledWith("room:join", expect.anything());
   });
 
   it("emite room:join con el avatarId elegido", () => {
@@ -88,6 +85,7 @@ describe("JoinRoomPage — flujo en dos pasos", () => {
     renderPage();
     goToNameStep("retro-ab12");
     fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
+    fireEvent.click(screen.getByLabelText("Cisco"));
     fireEvent.click(screen.getByText(/Entrar/));
 
     act(() => {
@@ -139,12 +137,14 @@ describe("JoinRoomPage — código precargado por link de invitación (/join/:co
     );
 
     fireEvent.change(screen.getByLabelText("Tu nombre"), { target: { value: "Ana" } });
+    fireEvent.click(screen.getByLabelText("Cisco"));
     fireEvent.click(screen.getByText(/Entrar/));
 
     expect(mockSocket.emit).toHaveBeenCalledWith("room:join", {
       code: "RETRO-AB12",
       name: "Ana",
-      avatarId: null,
+      avatarId: "cisco",
+      sessionToken: null,
     });
   });
 });

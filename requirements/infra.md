@@ -70,6 +70,8 @@ más simple de conectar al repo desde la cuenta que se use.
   - `VITE_BACKEND_URL` → la URL pública del backend en Render, para que el cliente de
     `socket.io-client` sepa a dónde conectarse. Debe usarse en el código como
     `import.meta.env.VITE_BACKEND_URL`, nunca hardcodeada.
+- **Fallback SPA:** `front/public/_redirects` debe contener `/* /index.html 200` para que abrir o
+  refrescar rutas como `/join/:code` y `/room/:code` no devuelva 404 en Netlify.
 
 ---
 

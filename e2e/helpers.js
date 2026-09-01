@@ -11,6 +11,7 @@ const PHASE_LABEL_FRAGMENTS = {
 export async function createRoomAsHost(page, { hostName, durations = {}, starsPerParticipant, secondsPerSpeaker } = {}) {
   await page.goto("/create");
   await page.getByLabel("Tu nombre").fill(hostName);
+  await page.getByRole("button", { name: "Cisco", exact: true }).click();
   await page.getByRole("button", { name: "Siguiente ▶" }).click();
 
   for (const [phase, minutes] of Object.entries(durations)) {
@@ -39,6 +40,7 @@ export async function joinRoomAsParticipant(page, { code, name }) {
   await page.getByLabel("Código de sala").fill(code);
   await page.getByRole("button", { name: "Siguiente ▶" }).click();
   await page.getByLabel("Tu nombre").fill(name);
+  await page.getByRole("button", { name: "Licha", exact: true }).click();
   await page.getByRole("button", { name: "▶ Entrar" }).click();
   await page.waitForURL(`**/room/${code}`);
 }

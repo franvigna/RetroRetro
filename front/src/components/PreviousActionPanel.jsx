@@ -10,9 +10,8 @@
 // calcula igual que en el backend (ver domain/previousAction.js): separar por
 // "\n" y quedarse con las líneas no vacías, en orden.
 //
-// Dos botones separados (✓ / ✕) en vez de uno solo que alterna: cada uno fija
-// un valor explícito (ver setPreviousActionItem en el backend) — más claro
-// que "tocar la cruz la convierte en tilde".
+// Dos botones separados (✓ / ✕): cada uno selecciona su estado y, si se
+// vuelve a tocar el que ya está activo, envía null para volver a "sin marcar".
 export function previousActionLines(notes) {
   return (notes || "").split("\n").filter((line) => line.trim().length > 0);
 }
@@ -44,7 +43,7 @@ export function PreviousActionPanel({ notes, checks = {}, onSetItem, canToggle =
                       aria-label="Marcar como no cumplido"
                       aria-pressed={notDone}
                       disabled={!canToggle}
-                      onClick={() => onSetItem?.(index, false)}
+                      onClick={() => onSetItem?.(index, notDone ? null : false)}
                     >
                       ✕
                     </button>
@@ -54,7 +53,7 @@ export function PreviousActionPanel({ notes, checks = {}, onSetItem, canToggle =
                       aria-label="Marcar como cumplido"
                       aria-pressed={done}
                       disabled={!canToggle}
-                      onClick={() => onSetItem?.(index, true)}
+                      onClick={() => onSetItem?.(index, done ? null : true)}
                     >
                       ✓
                     </button>

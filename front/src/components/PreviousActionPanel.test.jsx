@@ -63,6 +63,19 @@ describe("PreviousActionPanel", () => {
     expect(onSetItem).toHaveBeenCalledWith(1, false);
   });
 
+  it("clickear nuevamente el botón activo envía null para volver a sin selección", () => {
+    const onSetItem = vi.fn();
+    const { rerender } = render(
+      <PreviousActionPanel notes="uno" checks={{ 0: true }} onSetItem={onSetItem} canToggle />
+    );
+    screen.getByLabelText("Marcar como cumplido").click();
+    expect(onSetItem).toHaveBeenLastCalledWith(0, null);
+
+    rerender(<PreviousActionPanel notes="uno" checks={{ 0: false }} onSetItem={onSetItem} canToggle />);
+    screen.getByLabelText("Marcar como no cumplido").click();
+    expect(onSetItem).toHaveBeenLastCalledWith(0, null);
+  });
+
   it("deshabilita los botones si canToggle es false", () => {
     render(<PreviousActionPanel notes="uno" checks={{}} canToggle={false} />);
     for (const button of screen.getAllByRole("button")) {

@@ -43,7 +43,7 @@ ver `shared-contract.md`).
   entero entre `1` y `10` inclusive.
 - **Y si** `starsPerParticipant` viene fuera de ese rango, respondo `error:invalid_action` y no
   creo la sala.
-- **Y** valido `secondsPerSpeaker`: si no viene, uso `60` por defecto; si viene, debe ser un
+- **Y** valido `secondsPerSpeaker`: si no viene, uso `90` por defecto; si viene, debe ser un
   entero entre `30` y `300` inclusive (ver HU-B07, rotación automática del Nivel 4).
 - **Y si** `secondsPerSpeaker` viene fuera de ese rango, respondo `error:invalid_action` y no creo
   la sala.
@@ -238,17 +238,17 @@ ver `shared-contract.md`).
   el host decide cuándo avanzar al Nivel 5 con `phase:advance` normal, sin importar cuántas
   rotaciones de orador hayan pasado.
 
-**HU-B08 — Cálculo del Top 3 para el Salón de la Fama**
-> Como servidor, no necesito guardar ni calcular explícitamente el Top 3 del Nivel 6, ya que se
+**HU-B08 — Cálculo del Top 10 para el Salón de la Fama**
+> Como servidor, no necesito guardar ni calcular explícitamente el Top 10 del Nivel 6, ya que se
 > deriva de datos que ya existen en el estado, para no duplicar lógica de negocio entre back y
 > front.
 - El servidor no expone un campo nuevo para esto — tanto el front como cualquier test de backend
-  pueden obtener el Top 3 ordenando el array `cards` (de cualquier `RoomState`) por
-  `votes.length` de forma descendente y tomando los primeros 3 elementos.
-- **Desempate (resuelto, ver sección 5):** si dos o más tarjetas empatan en la cantidad de
-  estrellas que definiría el 3er puesto, se incluyen **todas** las tarjetas empatadas en ese
-  puesto — el resultado puede tener más de 3 elementos. Ej: 1ro (5★), 2do (4★), y dos tarjetas
-  empatadas en 3ro (3★ cada una) → se muestran las 4.
+  pueden obtener el Top 10 ordenando el array `cards` (de cualquier `RoomState`) por
+  `votes.length` de forma descendente y tomando los primeros 10 puntajes distintos.
+- **Desempate (resuelto, ver sección 5):** si dos o más tarjetas tienen la misma cantidad de
+  estrellas, comparten el mismo puesto. El siguiente puntaje distinto ocupa el puesto siguiente
+  (`1, 1, 2, 2...`). Se incluyen todos los empates del puesto 10, por lo que el resultado puede
+  contener más de 10 tarjetas.
 
 **HU-B09 — Manejo de desconexión temporal**
 > Como servidor, debo mantener al participante en la sala con `connected: false` ante una
@@ -317,9 +317,9 @@ antes de implementarlo, no directamente en el código.
   asignar una nueva estrella habiendo alcanzado el tope devuelve el error correspondiente sin
   modificar `votes`; votar una tarjeta inexistente devuelve el error correspondiente sin lanzar
   una excepción no controlada.
-- Cálculo del Top 3: dado un array de tarjetas de ejemplo con distintas cantidades de estrellas,
-  la función que deriva el Top 3 devuelve las 3 con más `votes.length`, ordenadas de mayor a
-  menor, y maneja el caso de empate según el criterio que se defina en la etapa de plan.
+- Cálculo del Top 10: dado un array de tarjetas de ejemplo con distintas cantidades de estrellas,
+  la función devuelve todos los puestos del 1 al 10 por `votes.length`, ordenados de mayor a
+  menor, con ranking denso y todas las tarjetas empatadas compartiendo puesto.
 - Validación de `starsPerParticipant` al crear sala: valores fuera de 1-10 son rechazados; sin
   valor, se aplica el default de 5; valores dentro del rango se guardan tal cual.
 - Validación de `previousActionNotes` al crear sala: sin valor, se guarda `""`; con valor, se
@@ -370,12 +370,12 @@ antes de implementarlo, no directamente en el código.
   que se vuelve, no retoma el tiempo restante previo.
 - **Duración por defecto de cada fase:** configurable por el host al crear la sala (ver
   `phaseDurations` en `shared-contract.md`), con valores recomendados prellenados.
-- **Top 3 del Nivel 6 (Salón de la Fama) — desempate:** si hay empate en el límite del 3er
-  puesto, se muestran **todas** las tarjetas empatadas (puede haber más de 3 en pantalla). No se
+- **Top 10 del Nivel 6 (Salón de la Fama) — desempate:** las tarjetas con igual cantidad de votos
+  comparten puesto y se muestran **todas** hasta el puesto 10 (puede haber más de 10 en pantalla). No se
   descarta arbitrariamente ninguna tarjeta que recibió el mismo apoyo que otra.
 - **Nivel 6 (Salón de la Fama) — sin tema de antemano:** nunca requiere que el host defina un
   tema al crear la sala. El foco de esa fase **emerge** de lo que el equipo escribió y votó
-  durante la propia sesión (Top 3 por cantidad de estrellas), calculado automáticamente. Lo único
+  durante la propia sesión (Top 10 por cantidad de estrellas), calculado automáticamente. Lo único
   configurable por el host es la cantidad de estrellas por participante (`starsPerParticipant`).
 - **"Responsable y fecha de la próxima retro" (Cierre):** se resuelve como **(a)** — cada tarjeta
   de `action_plan` tiene su propio `text` (la acción concreta) y `assigneeIds` opcional (array de

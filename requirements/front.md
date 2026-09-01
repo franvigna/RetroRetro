@@ -6,9 +6,9 @@ estética "Retro Arcade" descripta en `CLAUDE.md`.
 
 El frontend **nunca calcula el estado de la sala por su cuenta** (nivel actual, timer, estrellas
 usadas, quién tiene la palabra) — siempre refleja lo último recibido en el evento `room:state`
-del servidor (ver `shared-contract.md`). La única excepción es el cálculo del **Top 3 del Nivel
+del servidor (ver `shared-contract.md`). La única excepción es el cálculo del **Top 10 del Nivel
 6 (Salón de la Fama)**, que se deriva del array `cards` ya recibido (ordenar por `votes.length`
-descendente, tomar las primeras 3) — tanto front como back parten de los mismos datos, así que
+descendente, mostrar los puestos del 1 al 10 con ranking denso y excluir las tarjetas con 0 votos) — tanto front como back parten de los mismos datos, así que
 nunca pueden desincronizarse.
 
 ---
@@ -96,7 +96,7 @@ en pantallas anchas, ni queda pegado a un costado.
    conversación hablada de este nivel, mostrando de qué se está hablando sin permitir escribir
    contenido nuevo todavía (eso llega recién en el Nivel 7).
 6. **Nivel 6 — Salón de la Fama** — pantalla de solo lectura (no se agregan tarjetas nuevas) que
-   muestra automáticamente las 3 tarjetas con más estrellas de toda la sesión hasta ese momento,
+   muestra automáticamente el ranking de tarjetas con puestos del 1 al 10 según sus estrellas,
    presentadas como el "podio" de la partida (ej: 1er, 2do y 3er lugar), para que el equipo las
    discuta en profundidad durante el tiempo de ese nivel.
 7. **Game Over (cierre)** — resumen final tipo pantalla de "high score": plan de acción
@@ -185,7 +185,7 @@ en pantallas anchas, ni queda pegado a un costado.
 ### Como Participante
 
 **HU-F07 — Unirme a una sala existente (en dos pasos)**
-> Como participante, quiero unirme a una sala con un código, mi nombre y opcionalmente un
+> Como participante, quiero unirme a una sala con un código, mi nombre y un
 > personaje pixel-art, para participar de la retro sin necesidad de crear una cuenta.
 - **Paso 1 — Código de sala:** el único campo es el código de sala. No se pide nombre todavía.
 - **Dado** que ingreso un código de sala,
@@ -193,12 +193,12 @@ en pantallas anchas, ni queda pegado a un costado.
 - **Entonces** el frontend valida contra el servidor que la sala existe (o lo valida recién al
   emitir `room:join` al final del paso 2 — decisión de implementación, no cambia el contrato).
 - **Paso 2 — Nombre y personaje:** una vez el código es válido, se muestra un campo de nombre
-  **obligatorio** y una grilla de selección de personaje pixel-art **opcional** (ver `AVATAR_IDS`
+  **obligatorio** y una grilla de selección de personaje pixel-art **obligatoria** (ver `AVATAR_IDS`
   en `shared-contract.md` sección 1 — generados con la herramienta interna Avatar Lab a partir de
   fotos reales de los integrantes de Jaliscom).
 - **Dado** que estoy en el paso 2 con un código válido,
-- **Cuando** completo mi nombre (y opcionalmente toco un personaje para seleccionarlo — tocar de
-  nuevo el mismo lo deselecciona, dejando `avatarId: null`) y confirmo,
+- **Cuando** completo mi nombre y elijo un personaje (tocar de nuevo el mismo puede deseleccionarlo,
+  pero el formulario no permite continuar hasta elegir uno) y confirmo,
 - **Entonces** quedo en "Insertar moneda" de esa sala, visible para los demás participantes y el
   host, con mi personaje elegido (si elegí uno) visible junto a mi nombre en la lista de
   participantes.
@@ -228,6 +228,8 @@ en pantallas anchas, ni queda pegado a un costado.
   ningún formulario para agregar tarjetas nuevas en esta pantalla.
 - **Y** puedo tocar el lápiz para editar o la X para eliminar únicamente mis propias tarjetas
   (mismo mecanismo que HU-F09c) — las de los demás se ven pero sin ningún control de edición.
+- **Y** todas las tarjetas escritas por `currentSpeakerId` se resaltan visualmente mientras esa
+  persona tiene la palabra; al cambiar el orador, el resaltado pasa a sus tarjetas en tiempo real.
 
 **HU-F09 — Agregar una tarjeta en el nivel correspondiente**
 > Como participante, quiero escribir una tarjeta de texto libre en la columna que corresponda
@@ -267,7 +269,8 @@ en pantallas anchas, ni queda pegado a un costado.
 - **Cuando** hago doble click sobre ella, o toco el ícono de lápiz,
 - **Entonces** se habilita edición inline con el mismo formulario que se usó para crearla.
 - **Y cuando** toco el ícono de "X",
-- **Entonces** la tarjeta se elimina para siempre, sin confirmación adicional.
+- **Entonces** aparece una confirmación breve con `Cancelar / Eliminar`; solo al confirmar se
+  elimina para siempre. En el Nivel 4 también se aclara que allí no pueden agregarse tarjetas nuevas.
 - Estos dos controles (lápiz y X) solo aparecen en tarjetas de las que soy autor — nunca en
   tarjetas ajenas, ni siquiera si soy el host.
 
@@ -294,13 +297,13 @@ en pantallas anchas, ni queda pegado a un costado.
 - **Regla siempre vigente:** como máximo una estrella propia por tarjeta (no se puede apilar más
   de una estrella del mismo participante sobre la misma tarjeta).
 
-**HU-F11 — Ver el Top 3 automático en el Salón de la Fama**
-> Como participante, quiero ver cuáles fueron las 3 tarjetas más votadas sin que nadie tenga que
+**HU-F11 — Ver el Top 10 automático en el Salón de la Fama**
+> Como participante, quiero ver el ranking de las tarjetas más votadas sin que nadie tenga que
 > definir el tema de antemano, para que la conversación de esa fase se enfoque en lo que
 > realmente le importó al equipo ese día.
 - **Dado** que la sesión llega al Nivel 6,
 - **Cuando** se muestra la pantalla,
-- **Entonces** veo las 3 tarjetas con más estrellas (de cualquier columna del Nivel 3),
+- **Entonces** veo todos los puestos del 1 al 10 (de cualquier columna del Nivel 3), con todas las tarjetas empatadas compartiendo el mismo puesto y sin incluir tarjetas con 0 votos,
   ordenadas de mayor a menor, sin poder agregar tarjetas nuevas en esta pantalla.
 
 **HU-F11b — Formulario horizontal del plan de acción, con responsables por desplegable**
@@ -408,9 +411,9 @@ en pantallas anchas, ni queda pegado a un costado.
 - Renderizado correcto de cada pantalla con datos de ejemplo (mock de `RoomState`).
 - El formulario de "Crear sala" no permite enviar sin nombre.
 - El selector deslizable de estrellas nunca permite un valor menor a 1 ni mayor a 10, y por
-  defecto arranca en 3.
+  defecto arranca en 5.
 - El formulario de "Unirse a sala" paso 1 no avanza sin código. El paso 2 no permite enviar sin
-  nombre, y sí permite enviar sin personaje seleccionado (`avatarId` opcional).
+  nombre ni sin personaje seleccionado.
 - La grilla de personajes del paso 2 permite tocar un personaje para seleccionarlo y volver a
   tocarlo para deseleccionarlo (vuelve a `avatarId: null`).
 - El formulario de agregar tarjeta no permite enviar texto vacío.
@@ -426,9 +429,9 @@ en pantallas anchas, ni queda pegado a un costado.
 - Al simular un intento de asignar una estrella cuando el contador ya está en 0, el componente no
   dispara el evento `card:vote` (previene la llamada innecesaria, aunque la validación real esté
   en el backend).
-- El cálculo del Top 3 del Nivel 6 ordena correctamente un array de tarjetas de ejemplo por
-  `votes.length` descendente y toma solo las primeras 3, incluyendo el caso de empate (definir en
-  la etapa de plan cómo se desempata — ej: por orden de creación de la tarjeta).
+- El cálculo del Top 10 del Nivel 6 ordena correctamente un array de tarjetas de ejemplo por
+  `votes.length` descendente, excluye las de 0 votos y muestra todos los empates de cada puesto
+  hasta el puesto 10 con ranking denso (`1, 1, 2, 2, 3...`).
 - Manejo de los tres estados de conexión del socket (mock del cliente de socket.io) — se
   muestra el indicador correcto en cada estado.
 - Pruebas de layout: el contenedor principal mantiene un ancho máximo y queda centrado en
@@ -457,7 +460,7 @@ en pantallas anchas, ni queda pegado a un costado.
 - **E2E-F08:** un participante reparte todas sus estrellas disponibles y luego intenta asignar
   una más a otra tarjeta — la interacción no tiene efecto, y el estado de la sala no cambia para
   nadie.
-- **E2E-F09:** al llegar al Nivel 6, se muestran automáticamente las 3 tarjetas con más
+- **E2E-F09:** al llegar al Nivel 6, se muestran automáticamente todos los puestos hasta el Top 10, con empates compartiendo puesto, de las tarjetas con más
   estrellas de la sesión, sin que el host haya tenido que configurar ningún tema previamente.
 - **E2E-F10:** intentar unirse con un código inexistente muestra un error claro sin romper la
   navegación.

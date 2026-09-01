@@ -10,19 +10,28 @@ describe("topVotedCards", () => {
     expect(topVotedCards([])).toEqual([]);
   });
 
-  it("ordena por votes.length descendente y toma las primeras 3", () => {
+  it("excluye todas las tarjetas que tienen 0 votos", () => {
+    const cards = [card("votada", 2), card("sin-votos-a", 0), card("sin-votos-b", 0)];
+    expect(topVotedCards(cards).map((item) => item.id)).toEqual(["votada"]);
+    expect(topVotedCards([card("sin-votos", 0)])).toEqual([]);
+  });
+
+  it("ordena todas las tarjetas por votes.length descendente hasta el puesto 10", () => {
     const cards = [card("a", 1), card("b", 5), card("c", 3), card("d", 2)];
     const result = topVotedCards(cards);
-    expect(result.map((c) => c.id)).toEqual(["b", "c", "d"]);
+    expect(result.map((c) => c.id)).toEqual(["b", "c", "d", "a"]);
   });
 
-  it("incluye todas las tarjetas empatadas en el límite del 3er puesto (puede devolver más de 3)", () => {
-    const cards = [card("a", 5), card("b", 4), card("c", 3), card("d", 3), card("e", 1)];
+  it("considera cada cantidad de votos distinta como un puesto e incluye empates del puesto 10", () => {
+    const cards = Array.from({ length: 12 }, (_, index) => card(`c${index + 1}`, 12 - index));
+    cards.push(card("empate-10", 3));
     const result = topVotedCards(cards);
-    expect(result.map((c) => c.id)).toEqual(["a", "b", "c", "d"]);
+    expect(result.map((c) => c.id)).toContain("c10");
+    expect(result.map((c) => c.id)).toContain("empate-10");
+    expect(result.map((c) => c.id)).not.toContain("c11");
   });
 
-  it("devuelve todo el array si tiene 3 o menos elementos", () => {
+  it("devuelve todas las tarjetas votadas si tiene 10 puestos o menos", () => {
     const cards = [card("a", 1), card("b", 2)];
     const result = topVotedCards(cards);
     expect(result).toHaveLength(2);

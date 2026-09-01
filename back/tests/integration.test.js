@@ -692,7 +692,7 @@ describe("integración de socket", () => {
     expect(error.action).toBe("turn:set_speaker");
   });
 
-  it("hall_of_fame: el Top 3 se deriva de cards, no requiere ningún evento nuevo del servidor", async () => {
+  it("hall_of_fame: el Top 10 se deriva de cards, no requiere ningún evento nuevo del servidor", async () => {
     const host = connectClient();
     host.emit("room:create", { hostName: "Cisco" });
     const { code } = await waitFor(host, "room:created");
@@ -899,13 +899,13 @@ describe("integración de socket", () => {
     expect(hostState.room.previousActionChecks).toEqual({ 1: true });
     expect(participantState.room.previousActionChecks).toEqual({ 1: true });
 
-    // Marcar el mismo valor de nuevo no cambia nada (no es un toggle).
+    // Tocar nuevamente el mismo estado vuelve a "sin selección".
     const samePromise = waitFor(host, "room:state");
-    participant.emit("phase:set_previous_action_item", { index: 1, done: true });
+    participant.emit("phase:set_previous_action_item", { index: 1, done: null });
     const sameState = await samePromise;
-    expect(sameState.room.previousActionChecks).toEqual({ 1: true });
+    expect(sameState.room.previousActionChecks).toEqual({});
 
-    // Desmarcarlo explícitamente.
+    // Marcarlo explícitamente como no cumplido.
     const unmarkedPromise = waitFor(host, "room:state");
     participant.emit("phase:set_previous_action_item", { index: 1, done: false });
     const unmarkedState = await unmarkedPromise;

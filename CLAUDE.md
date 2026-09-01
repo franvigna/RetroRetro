@@ -50,7 +50,7 @@ se siente natural en la UI real):
 | Keep / Improve / Try                  | `NIVEL 3 — Power-ups, trampas e ítems nuevos`             |
 | Ronda de expresión (verbal, sin tarjetas) | `NIVEL 4 — Turno de jugador`                          |
 | Agrupación + votación                 | `NIVEL 5 — Ranking de estrellas`                          |
-| Top 3 más votado, para profundizar    | `NIVEL 6 — Salón de la Fama`                              |
+| Ranking Top 10, para profundizar      | `NIVEL 6 — Salón de la Fama`                              |
 | Plan de acción                        | `NIVEL 7 — Guardar partida`                               |
 | Cierre                                | `GAME OVER — High Score`                                  |
 
@@ -66,7 +66,7 @@ se siente natural en la UI real):
 > `requirements/back.md`.
 
 > **Importante sobre el Nivel 6 (Salón de la Fama):** no es un tema definido de antemano por el
-> host. Es una fase **automática**: el sistema calcula las 3 tarjetas con más estrellas del
+> host. Es una fase **automática**: el sistema calcula el ranking de puestos del 1 al 10 según las estrellas del
 > Nivel 5 y las muestra para que el equipo profundice la conversación sobre esos temas puntuales
 > — que van a ser distintos en cada retro, según lo que el equipo mismo haya escrito y votado ese
 > día. No requiere ningún campo de configuración al crear la sala.
@@ -157,7 +157,7 @@ Explícitamente **dentro** de alcance:
 - Configurar la cantidad de estrellas por participante al crear la sala (mínimo 1, máximo 10,
   default 5).
 - Repartir estrellas de puntaje sobre tarjetas (sistema de votación, ver detalle en `front.md`).
-- Ver automáticamente el Top 3 más votado en el Nivel 6 (Salón de la Fama).
+- Ver automáticamente el ranking Top 10 en el Nivel 6 (Salón de la Fama), compartiendo puesto cuando hay empate.
 - Ver el plan de acción final consolidado en "Game Over".
 
 Explícitamente **fuera** de alcance en esta etapa (no lo implementes salvo que se pida

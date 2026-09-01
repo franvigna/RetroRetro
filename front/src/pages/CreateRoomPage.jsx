@@ -47,7 +47,7 @@ export function CreateRoomPage() {
   function handleNext(e) {
     e.preventDefault();
     setTouched(true);
-    if (step === STEP_HOST_NAME && !hostName.trim()) return;
+    if (step === STEP_HOST_NAME && (!hostName.trim() || !avatarId)) return;
     setTouched(false);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
   }
@@ -99,7 +99,7 @@ export function CreateRoomPage() {
               />
               {hostNameError && <span className="field-error">Ingresá tu nombre para continuar.</span>}
             </div>
-            <AvatarPicker value={avatarId} onChange={setAvatarId} />
+            <AvatarPicker value={avatarId} onChange={setAvatarId} required showError={touched} />
             <button type="submit" className="btn btn-primary btn-block">
               Siguiente ▶
             </button>
@@ -123,7 +123,7 @@ export function CreateRoomPage() {
               label={`${PHASE_THEMES.expression_round.title} — ${PHASE_THEMES.expression_round.subtitle}`}
               value={secondsPerSpeaker}
               onChange={setSecondsPerSpeaker}
-              note="Recomendado: 60 segundos. Cada persona habla ese tiempo y rota sola — el anfitrión puede saltar a cualquiera en cualquier momento."
+              note="Recomendado: 90 segundos. Cada persona dispone de ese tiempo; el anfitrión puede adaptar el orden en cualquier momento."
               min={MIN_SECONDS_PER_SPEAKER}
               max={MAX_SECONDS_PER_SPEAKER}
               unit="segundos por persona"

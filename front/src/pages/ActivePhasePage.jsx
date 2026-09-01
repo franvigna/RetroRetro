@@ -114,13 +114,36 @@ export function ActivePhasePage() {
         )}
 
         {room.phase === "welcome" && (
-          <p>
-            Bienvenidos a RetroRetro: la retrospectiva del equipo, con estética retro. La sesión
-            avanza en niveles: en cada uno vas a tener un tiempo límite visible para todos, y
-            cuando se cumple, el anfitrión avanza al siguiente. Vamos a repasar qué funcionó, qué
-            mejorar y qué probar, darle a cada uno su turno para opinar, votar entre todos lo más
-            importante, y cerrar con un plan de acción concreto. ¡Que empiece el juego!
-          </p>
+          <section className="welcome-guide" aria-labelledby="welcome-guide-title">
+            <div className="welcome-guide-intro">
+              <span className="welcome-guide-kicker">PLAYER GUIDE</span>
+              <h2 id="welcome-guide-title">La misión de esta partida</h2>
+              <p>Mirar el último sprint en equipo y convertir lo aprendido en acciones concretas.</p>
+            </div>
+
+            <ol className="welcome-guide-steps">
+              <li>
+                <span className="welcome-guide-icon" aria-hidden="true">◆</span>
+                <div><strong>Compartir</strong><span>Qué funcionó, qué mejorar y qué queremos probar.</span></div>
+              </li>
+              <li>
+                <span className="welcome-guide-icon" aria-hidden="true">◉</span>
+                <div><strong>Escuchar</strong><span>Cada persona tendrá su turno para explicar sus tarjetas.</span></div>
+              </li>
+              <li>
+                <span className="welcome-guide-icon" aria-hidden="true">★</span>
+                <div><strong>Priorizar</strong><span>Repartiremos estrellas para destacar los temas importantes.</span></div>
+              </li>
+              <li>
+                <span className="welcome-guide-icon" aria-hidden="true">✓</span>
+                <div><strong>Actuar</strong><span>Cerraremos la retro con un plan claro y responsables definidos.</span></div>
+              </li>
+            </ol>
+
+            <div className="welcome-guide-footer">
+              <span>⏱ Cada nivel tiene su propio tiempo</span>
+            </div>
+          </section>
         )}
 
         {room.phase === "previous_action" && (
@@ -162,25 +185,35 @@ export function ActivePhasePage() {
         )}
 
         {columnsToShow && (
-          <div className="card-columns">
-            {columnsToShow.map((column) => (
-              <CardColumn
-                key={column}
-                column={column}
-                cards={room.cards.filter((c) => c.column === column)}
-                participantsById={participantsById}
-                participants={room.participants}
-                canAddCard={!showsPastCards && columnsForPhase?.includes(column)}
-                showVote={isVotingPhase}
-                currentParticipantId={currentParticipantId}
-                remainingVotes={remainingVotes}
-                onAddCard={addCard}
-                onVote={handleVote}
-                onEditCard={!isVotingPhase ? editCard : undefined}
-                onDeleteCard={!isVotingPhase ? deleteCard : undefined}
-              />
-            ))}
-          </div>
+          <>
+            <div className="card-columns">
+              {columnsToShow.map((column) => (
+                <CardColumn
+                  key={column}
+                  column={column}
+                  cards={room.cards.filter((c) => c.column === column)}
+                  participantsById={participantsById}
+                  participants={room.participants}
+                  canAddCard={!showsPastCards && columnsForPhase?.includes(column)}
+                  showVote={isVotingPhase}
+                  currentParticipantId={currentParticipantId}
+                  remainingVotes={remainingVotes}
+                  onAddCard={addCard}
+                  onVote={handleVote}
+                  onEditCard={!isVotingPhase ? editCard : undefined}
+                  onDeleteCard={!isVotingPhase ? deleteCard : undefined}
+                  showPrompts={room.phase === "keep_improve_try"}
+                  highlightedAuthorId={isExpressionRound ? room.currentSpeakerId : null}
+                />
+              ))}
+            </div>
+            {!isVotingPhase && room.phase !== "action_plan" && (
+              <aside className="card-edit-tip" role="note">
+                <span aria-hidden="true">💡</span>
+                <span>Podés hacer doble click en una tarjeta para editarla.</span>
+              </aside>
+            )}
+          </>
         )}
 
         <HostControls

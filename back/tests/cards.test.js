@@ -203,7 +203,17 @@ describe("topVotedCards (Salón de la Fama)", () => {
     expect(topVotedCards([])).toEqual([]);
   });
 
-  it("devuelve las 3 con más votos, ordenadas descendente", () => {
+  it("excluye las cards con 0 votos del ranking", () => {
+    const cards = [
+      { id: "votada", votes: ["p1"] },
+      { id: "sin-votos-a", votes: [] },
+      { id: "sin-votos-b", votes: [] },
+    ];
+    expect(topVotedCards(cards).map((card) => card.id)).toEqual(["votada"]);
+    expect(topVotedCards(cards.slice(1))).toEqual([]);
+  });
+
+  it("devuelve todas hasta el puesto 10, ordenadas descendente", () => {
     const cards = [
       { id: "c1", votes: ["p1"] },
       { id: "c2", votes: ["p1", "p2", "p3"] },
@@ -214,22 +224,22 @@ describe("topVotedCards (Salón de la Fama)", () => {
     expect(top.map((c) => c.id)).toEqual(["c2", "c3", "c1"]);
   });
 
-  it("incluye más de 3 tarjetas si hay empate en el límite del 3er puesto", () => {
-    const cards = [
-      { id: "c1", votes: ["p1", "p2", "p3", "p4", "p5"] }, // 5
-      { id: "c2", votes: ["p1", "p2", "p3", "p4"] }, // 4
-      { id: "c3", votes: ["p1", "p2", "p3"] }, // 3
-      { id: "c4", votes: ["p1", "p2", "p6"] }, // 3 -> empate con c3
-      { id: "c5", votes: ["p1"] }, // 1
-    ];
+  it("incluye todos los empates del puesto 10 y excluye desde el puesto 11", () => {
+    const cards = Array.from({ length: 12 }, (_, index) => ({
+      id: `c${index + 1}`,
+      votes: Array.from({ length: 12 - index }, (_unused, voteIndex) => `p${voteIndex}`),
+    }));
+    cards.push({ id: "empate-10", votes: ["p1", "p2", "p3"] });
     const top = topVotedCards(cards);
-    expect(top.map((c) => c.id).sort()).toEqual(["c1", "c2", "c3", "c4"]);
+    expect(top.map((c) => c.id)).toContain("c10");
+    expect(top.map((c) => c.id)).toContain("empate-10");
+    expect(top.map((c) => c.id)).not.toContain("c11");
   });
 
-  it("devuelve todas las cards si hay menos de 3", () => {
+  it("devuelve todas las cards votadas si hay menos de 10 puestos", () => {
     const cards = [
       { id: "c1", votes: ["p1"] },
-      { id: "c2", votes: [] },
+      { id: "c2", votes: ["p1", "p2"] },
     ];
     expect(topVotedCards(cards)).toHaveLength(2);
   });

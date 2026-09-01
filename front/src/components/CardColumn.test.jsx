@@ -124,6 +124,28 @@ describe("CardColumn — formulario de agregar tarjeta", () => {
     }
   });
 
+  it("oculta las preguntas disparadoras cuando showPrompts=false (Nivel 4)", () => {
+    render(
+      <CardColumn
+        column="keep"
+        cards={[]}
+        participantsById={participantsById}
+        canAddCard={false}
+        showVote={false}
+        showPrompts={false}
+        currentParticipantId="p1"
+        remainingVotes={3}
+        onAddCard={() => {}}
+        onVote={() => {}}
+      />
+    );
+
+    expect(screen.getByText("Keep (Mantener)")).toBeInTheDocument();
+    for (const prompt of COLUMN_PROMPTS.keep) {
+      expect(screen.queryByText(prompt)).not.toBeInTheDocument();
+    }
+  });
+
   it("no muestra pregunta disparadora en la columna action_plan", () => {
     render(
       <CardColumn

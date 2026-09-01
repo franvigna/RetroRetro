@@ -27,12 +27,13 @@ export const PHASE_THEMES = {
   expression_round: {
     title: "NIVEL 4",
     subtitle: "Turno de jugador",
-    description: "Ronda de expresión: rota sola cada tanto, o el anfitrión salta a cualquiera tocándolo.",
+    description:
+      "Cada participante dispone de 90 segundos para explicar sus tarjetas. Al finalizar, el turno pasa automáticamente al siguiente, aunque el anfitrión puede adaptar el orden cuando sea necesario.",
   },
   grouping_voting: {
     title: "NIVEL 5",
     subtitle: "Ranking de estrellas",
-    description: "Repartí tus estrellas de puntaje entre las tarjetas más importantes.",
+    description: "Repartí tus estrellas de puntaje entre las tarjetas que consideres más importantes.",
   },
   hall_of_fame: {
     title: "NIVEL 6",
@@ -97,7 +98,7 @@ export function minutesToSeconds(minutes) {
 // (ver shared-contract.md "Rotación automática del Nivel 4").
 export const MIN_SECONDS_PER_SPEAKER = 30;
 export const MAX_SECONDS_PER_SPEAKER = 300;
-export const DEFAULT_SECONDS_PER_SPEAKER = 60;
+export const DEFAULT_SECONDS_PER_SPEAKER = 90;
 
 export const CARD_COLUMNS_BY_PHASE = {
   keep_improve_try: ["keep", "improve", "try"],
@@ -105,9 +106,9 @@ export const CARD_COLUMNS_BY_PHASE = {
 };
 
 export const COLUMN_LABELS = {
-  keep: "Keep",
-  improve: "Improve",
-  try: "Try",
+  keep: "Keep (Mantener)",
+  improve: "Improve (Mejorar)",
+  try: "Try (Intentar)",
   action_plan: "Guardar partida",
 };
 

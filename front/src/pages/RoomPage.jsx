@@ -4,6 +4,7 @@ import { useRoom } from "../context/RoomContext.jsx";
 import { WaitingRoomPage } from "./WaitingRoomPage.jsx";
 import { ActivePhasePage } from "./ActivePhasePage.jsx";
 import { ClosingPage } from "./ClosingPage.jsx";
+import { AvatarPicker } from "../components/AvatarPicker.jsx";
 
 // Punto de entrada de la ruta /room/:code. Si el contexto todavía no tiene el
 // room cargado (ej. refresh duro de página), RoomContext ya reintenta
@@ -24,6 +25,7 @@ export function RoomPage() {
     pendingRejoinName,
   } = useRoom();
   const [name, setName] = useState("");
+  const [avatarId, setAvatarId] = useState(null);
   const [touched, setTouched] = useState(false);
 
   const roomMatchesUrl = room && room.code === code;
@@ -67,10 +69,10 @@ export function RoomPage() {
     function handleSubmit(e) {
       e.preventDefault();
       setTouched(true);
-      if (!name.trim()) return;
+      if (!name.trim() || !avatarId) return;
       clearRoomNotFound();
       clearRoomLocked();
-      joinRoom(code, name.trim());
+      joinRoom(code, name.trim(), avatarId);
     }
 
     return (
@@ -93,6 +95,7 @@ export function RoomPage() {
               />
               {touched && !name.trim() && <span className="field-error">Ingresá tu nombre.</span>}
             </div>
+            <AvatarPicker value={avatarId} onChange={setAvatarId} required showError={touched} />
             {roomNotFoundCode && (
               <p className="error-banner">La sala {roomNotFoundCode} no existe o ya cerró.</p>
             )}

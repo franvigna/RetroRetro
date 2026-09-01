@@ -26,10 +26,10 @@ describe("setPreviousActionItem", () => {
     expect(next.previousActionChecks).toEqual({ 1: false });
   });
 
-  it("marcar dos veces el mismo valor no cambia nada (no es un toggle)", () => {
+  it("done=null vuelve el ítem al estado inicial sin selección", () => {
     const withCheck = { ...room, previousActionChecks: { 1: true } };
-    const next = setPreviousActionItem(withCheck, { index: 1, done: true });
-    expect(next.previousActionChecks).toEqual({ 1: true });
+    const next = setPreviousActionItem(withCheck, { index: 1, done: null });
+    expect(next.previousActionChecks).toEqual({});
   });
 
   it("no toca los demás índices", () => {
@@ -48,7 +48,7 @@ describe("setPreviousActionItem", () => {
     expect(() => setPreviousActionItem(room, { index: undefined, done: true })).toThrow(InvalidActionError);
   });
 
-  it("rechaza done ausente o no booleano", () => {
+  it("rechaza done ausente o que no sea booleano/null", () => {
     expect(() => setPreviousActionItem(room, { index: 1 })).toThrow(InvalidActionError);
     expect(() => setPreviousActionItem(room, { index: 1, done: "true" })).toThrow(InvalidActionError);
   });

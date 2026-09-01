@@ -10,19 +10,23 @@ export function previousActionLineCount(previousActionNotes) {
     .filter((line) => line.trim().length > 0).length;
 }
 
-// `done` es explícito (no un toggle ciego) porque la UI tiene dos botones
-// separados — ✓ "cumplido" y ✕ "no cumplido" — en vez de uno solo que
-// alterna: tocar el botón que ya representa el estado actual no debe invertirlo.
+// true = cumplido, false = no cumplido y null = volver al estado inicial sin
+// selección. El cliente manda null al tocar de nuevo el botón ya activo.
 export function setPreviousActionItem(room, { index, done }) {
   const lineCount = previousActionLineCount(room.previousActionNotes);
   if (!Number.isInteger(index) || index < 0 || index >= lineCount) {
     throw new InvalidActionError("phase:set_previous_action_item", `índice fuera de rango: ${index}`);
   }
-  if (typeof done !== "boolean") {
-    throw new InvalidActionError("phase:set_previous_action_item", "done debe ser un booleano");
+  if (typeof done !== "boolean" && done !== null) {
+    throw new InvalidActionError("phase:set_previous_action_item", "done debe ser booleano o null");
   }
 
   const current = room.previousActionChecks ?? {};
-  const nextChecks = { ...current, [index]: done };
+  const nextChecks = { ...current };
+  if (done === null) {
+    delete nextChecks[index];
+  } else {
+    nextChecks[index] = done;
+  }
   return { ...room, previousActionChecks: nextChecks };
 }

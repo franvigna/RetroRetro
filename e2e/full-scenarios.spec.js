@@ -188,6 +188,7 @@ test("E2E-COMPLETO-05: código de sala inválido no deja la UI en carga infinita
   await page.getByLabel("Código de sala").fill("RETRO-9999");
   await page.getByRole("button", { name: "Siguiente ▶" }).click();
   await page.getByLabel("Tu nombre").fill("Nadie");
+  await page.getByRole("button", { name: "Licha", exact: true }).click();
   await page.getByRole("button", { name: "▶ Entrar" }).click();
 
   await expect(page.getByText(/No encontramos ninguna sala/)).toBeVisible({ timeout: 5000 });
