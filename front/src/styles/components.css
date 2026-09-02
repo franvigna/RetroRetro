@@ -925,8 +925,8 @@
 
 .avatar-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(3.25rem, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
   margin-bottom: 1rem;
 }
 
@@ -934,7 +934,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.4rem;
+  padding: 0.5rem;
   background: var(--color-bg-alt);
   border: 2px solid var(--color-border);
   cursor: pointer;
@@ -942,8 +942,10 @@
 }
 
 .avatar-option img {
-  width: 48px;
-  height: 48px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-width: 88px;
   image-rendering: pixelated;
   transition: transform 0.15s ease;
 }
