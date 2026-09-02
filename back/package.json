@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node src/server.js",
-    "dev:watch": "node --watch src/server.js",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "dev:watch": "tsx watch src/server.ts",
+    "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -17,7 +18,12 @@
     "socket.io": "^4.7.5"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.10.2",
     "socket.io-client": "^4.7.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
     "vitest": "^2.1.1"
   }
 }

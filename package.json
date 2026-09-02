@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.2",
-    "socket.io-client": "^4.7.5"
+    "@types/node": "^22.10.2",
+    "socket.io-client": "^4.7.5",
+    "typescript": "^5.7.2"
   }
 }
