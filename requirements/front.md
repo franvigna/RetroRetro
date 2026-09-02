@@ -77,9 +77,12 @@ en pantallas anchas, ni queda pegado a un costado.
 3. **Insertar moneda (sala de espera)** — muestra código de sala, lista de participantes
    conectados en vivo, y (solo si sos host) un botón para iniciar la partida. Sin timer.
 4. **Vista de nivel activo** — layout que se reutiliza para todos los niveles con timer:
-   - Header centrado con: nombre temático del nivel, timer (cuenta regresiva), y — **solo
-     durante el Nivel 5 (Ranking de estrellas)** — el contador de estrellas disponibles del
-     participante actual (ver HU-F10).
+   - Header centrado con: si la sala tiene `teamName` (ver HU-F01), una etiqueta pixel-art chica
+     ("EQUIPO {NOMBRE}") arriba del título — ausente si no se completó ese campo opcional —, el
+     nombre temático del nivel, timer (cuenta regresiva), y — **solo durante el Nivel 5 (Ranking
+     de estrellas)** — el contador de estrellas disponibles del participante actual (ver HU-F10).
+     La misma etiqueta de equipo aparece también en "Insertar moneda" y en "Game Over", con el
+     mismo criterio.
    - Contenido específico del nivel (formulario para agregar tarjeta, columnas de tarjetas,
      tarjetas con ícono de estrella, lista de participantes con quién tiene la palabra, etc.
      según corresponda), siempre dentro del contenedor centrado descripto en la sección 2.
@@ -132,6 +135,12 @@ en pantallas anchas, ni queda pegado a un costado.
   Over de la sesión anterior. Se muestra tal cual al equipo en el Nivel 2 (ver HU-F16b). No hay
   ninguna validación de formato — es texto plano sin estructura, y queda vacío por defecto si no
   se completa.
+- **Campo opcional "Nombre del equipo":** input de texto libre (máximo 60 caracteres), en el mismo
+  paso 3 del formulario, junto al textarea anterior. Si el host lo completa (ej: "Jaliscom"),
+  aparece como una etiqueta pixel-art chica arriba del título de cada nivel (Insertar Moneda,
+  Nivel 1 a 7, Game Over) y como título en el PDF exportado desde Game Over (`Retro del equipo
+  "{nombre}"`). Si se deja vacío, la app se ve exactamente igual que sin esta feature — no hay
+  ningún placeholder ni etiqueta vacía en su lugar.
 
 **HU-F01b — Copiar un link para invitar participantes**
 > Como anfitrión (o cualquier participante ya en la sala), quiero copiar un link directo para

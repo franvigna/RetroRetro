@@ -189,4 +189,29 @@ describe("CreateRoomPage — formulario no envía vacío", () => {
       expect.objectContaining({ previousActionNotes: "Documentar el proceso de deploy" })
     );
   });
+
+  it("emite room:create con teamName vacío si no se completa el campo", () => {
+    renderPage();
+    goToStarsStep();
+    fireEvent.click(screen.getByText(/Crear sala/));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "room:create",
+      expect.objectContaining({ teamName: "" })
+    );
+  });
+
+  it("emite room:create con el nombre de equipo cargado en el paso 3", () => {
+    renderPage();
+    goToStarsStep();
+    fireEvent.change(screen.getByLabelText(/Nombre del equipo/), {
+      target: { value: "Jaliscom" },
+    });
+    fireEvent.click(screen.getByText(/Crear sala/));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      "room:create",
+      expect.objectContaining({ teamName: "Jaliscom" })
+    );
+  });
 });

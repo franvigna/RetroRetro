@@ -107,3 +107,19 @@ describe("ClosingPage — volver a la fase anterior (host)", () => {
     expect(screen.queryByRole("button", { name: /Nivel anterior/ })).not.toBeInTheDocument();
   });
 });
+
+describe("ClosingPage — nombre de equipo opcional en el header", () => {
+  beforeEach(() => {
+    mockSocket.emit.mockClear();
+  });
+
+  it("muestra el nombre de equipo cuando la sala lo tiene", () => {
+    renderClosing({ room: { ...closingRoom(), teamName: "Jaliscom" } });
+    expect(screen.getByText("EQUIPO JALISCOM")).toBeInTheDocument();
+  });
+
+  it("no muestra nada si la sala no tiene nombre de equipo", () => {
+    renderClosing({ room: { ...closingRoom(), teamName: "" } });
+    expect(screen.queryByText(/^EQUIPO /)).not.toBeInTheDocument();
+  });
+});

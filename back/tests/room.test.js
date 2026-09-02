@@ -4,12 +4,14 @@ import {
   resolveAvatarId,
   resolveSecondsPerSpeaker,
   resolvePreviousActionNotes,
+  resolveTeamName,
   generateSessionToken,
   toPublicRoom,
   isRoomLockedForNewJoins,
   updateRoomSettings,
   AVATAR_IDS,
   PREVIOUS_ACTION_NOTES_MAX_LENGTH,
+  TEAM_NAME_MAX_LENGTH,
 } from "../src/domain/room.js";
 import { DEFAULT_PHASE_DURATIONS_SECONDS } from "../src/domain/phases.js";
 import { InvalidActionError } from "../src/domain/errors.js";
@@ -162,6 +164,21 @@ describe("updateRoomSettings", () => {
     const tooLong = "a".repeat(PREVIOUS_ACTION_NOTES_MAX_LENGTH + 1);
     expect(() => createRoom({ ...baseArgs, previousActionNotes: tooLong })).toThrow(InvalidActionError);
   });
+
+  it("guarda teamName vacío si no se pasa nada", () => {
+    const room = createRoom(baseArgs);
+    expect(room.teamName).toBe("");
+  });
+
+  it("guarda teamName con el nombre pasado por el host, recortado", () => {
+    const room = createRoom({ ...baseArgs, teamName: "  Jaliscom  " });
+    expect(room.teamName).toBe("Jaliscom");
+  });
+
+  it("rechaza teamName que supera el máximo de caracteres", () => {
+    const tooLong = "a".repeat(TEAM_NAME_MAX_LENGTH + 1);
+    expect(() => createRoom({ ...baseArgs, teamName: tooLong })).toThrow(InvalidActionError);
+  });
 });
 
 describe("resolvePreviousActionNotes", () => {
@@ -182,6 +199,27 @@ describe("resolvePreviousActionNotes", () => {
   it("rechaza texto que supera el máximo de caracteres", () => {
     const tooLong = "a".repeat(PREVIOUS_ACTION_NOTES_MAX_LENGTH + 1);
     expect(() => resolvePreviousActionNotes(tooLong)).toThrow(InvalidActionError);
+  });
+});
+
+describe("resolveTeamName", () => {
+  it("devuelve string vacío si no se pasa valor", () => {
+    expect(resolveTeamName(undefined)).toBe("");
+    expect(resolveTeamName(null)).toBe("");
+  });
+
+  it("recorta espacios al inicio/fin", () => {
+    expect(resolveTeamName("  Jaliscom  ")).toBe("Jaliscom");
+  });
+
+  it("acepta texto hasta el máximo de caracteres", () => {
+    const exact = "a".repeat(TEAM_NAME_MAX_LENGTH);
+    expect(resolveTeamName(exact)).toBe(exact);
+  });
+
+  it("rechaza texto que supera el máximo de caracteres", () => {
+    const tooLong = "a".repeat(TEAM_NAME_MAX_LENGTH + 1);
+    expect(() => resolveTeamName(tooLong)).toThrow(InvalidActionError);
   });
 });
 

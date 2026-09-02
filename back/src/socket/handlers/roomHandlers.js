@@ -31,7 +31,15 @@ export function registerRoomHandlers(
 ) {
   socket.on(
     "room:create",
-    ({ hostName, phaseDurations, starsPerParticipant, secondsPerSpeaker, avatarId, previousActionNotes } = {}) => {
+    ({
+      hostName,
+      phaseDurations,
+      starsPerParticipant,
+      secondsPerSpeaker,
+      avatarId,
+      previousActionNotes,
+      teamName,
+    } = {}) => {
       try {
         if (isRateLimited(socket.id, "room:create", CREATE_LIMIT)) {
           throw new RateLimitedError("room:create");
@@ -46,6 +54,7 @@ export function registerRoomHandlers(
           secondsPerSpeaker,
           avatarId,
           previousActionNotes,
+          teamName,
           now: Date.now(),
         });
         roomStore.set(code, room);

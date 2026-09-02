@@ -15,6 +15,7 @@ import {
   MIN_SECONDS_PER_SPEAKER,
   MAX_SECONDS_PER_SPEAKER,
   PREVIOUS_ACTION_NOTES_MAX_LENGTH,
+  TEAM_NAME_MAX_LENGTH,
   minutesToSeconds,
 } from "../domain/phaseThemes.js";
 
@@ -34,6 +35,7 @@ export function CreateRoomPage() {
   const [secondsPerSpeaker, setSecondsPerSpeaker] = useState(DEFAULT_SECONDS_PER_SPEAKER);
   const [avatarId, setAvatarId] = useState(null);
   const [previousActionNotes, setPreviousActionNotes] = useState("");
+  const [teamName, setTeamName] = useState("");
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export function CreateRoomPage() {
       secondsPerSpeaker,
       avatarId,
       previousActionNotes: previousActionNotes.trim(),
+      teamName: teamName.trim(),
     });
   }
 
@@ -152,6 +155,23 @@ export function CreateRoomPage() {
             <h2 className="cabinet-title">PASO 3</h2>
             <p className="cabinet-subtitle">Estrellas de puntaje</p>
             <StarsSliderInput value={starsPerParticipant} onChange={setStarsPerParticipant} />
+
+            <div className="field">
+              <label htmlFor="teamName">
+                Nombre del equipo <span className="field-help">(opcional)</span>
+              </label>
+              <input
+                id="teamName"
+                type="text"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                placeholder="Ej: Jaliscom"
+                maxLength={TEAM_NAME_MAX_LENGTH}
+              />
+              <span className="field-help">
+                Si lo completás, aparece en el encabezado de cada nivel y en el PDF exportado.
+              </span>
+            </div>
 
             <div className="field">
               <label htmlFor="previousActionNotes">

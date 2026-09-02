@@ -109,6 +109,27 @@ describe("integración de socket", () => {
     expect(error.action).toBe("room:create");
   });
 
+  it("room:create guarda teamName opcional, visible para todos en room:state", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco", teamName: "Jaliscom" });
+    const { code, room: createdRoom } = await waitFor(host, "room:created");
+    expect(createdRoom.teamName).toBe("Jaliscom");
+
+    const participant = connectClient();
+    const hostStatePromise = waitFor(host, "room:state");
+    participant.emit("room:join", { code, name: "Ana" });
+    const [, participantState] = await Promise.all([hostStatePromise, waitFor(participant, "room:state")]);
+
+    expect(participantState.room.teamName).toBe("Jaliscom");
+  });
+
+  it("room:create sin teamName guarda string vacío, sin romper el resto de la sala", async () => {
+    const host = connectClient();
+    host.emit("room:create", { hostName: "Cisco" });
+    const { room: createdRoom } = await waitFor(host, "room:created");
+    expect(createdRoom.teamName).toBe("");
+  });
+
   it("E2E-B03: un no-host que emite phase:advance recibe error:unauthorized sin cambiar el estado", async () => {
     const host = connectClient();
     host.emit("room:create", { hostName: "Cisco" });

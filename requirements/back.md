@@ -36,7 +36,7 @@ ver `shared-contract.md`).
 > guardar la configuración de estrellas que definió el host, para que cada anfitrión tenga un
 > identificador propio y una sesión ajustada a su equipo.
 - **Dado** un pedido `room:create` con
-  `{ hostName, starsPerParticipant?, secondsPerSpeaker?, previousActionNotes? }`,
+  `{ hostName, starsPerParticipant?, secondsPerSpeaker?, previousActionNotes?, teamName? }`,
 - **Cuando** genero el código,
 - **Entonces** verifico que no exista ya en el mapa de salas activas antes de asignarlo.
 - **Y** valido `starsPerParticipant`: si no viene, uso `5` por defecto; si viene, debe ser un
@@ -51,6 +51,10 @@ ver `shared-contract.md`).
   (`.trim()`) y rechazo con `error:invalid_action` si supera los 2000 caracteres. Es texto libre
   sin ninguna otra validación de formato — el host lo pega tal cual (ej: copiado del Game Over de
   la retro anterior) para que se muestre en el Nivel 2 (ver HU-F16b en front.md).
+- **Y** valido `teamName`: si no viene, uso `""` por defecto (sin ningún cambio visible en la
+  app); si viene, lo recorto (`.trim()`) y rechazo con `error:invalid_action` si supera los 60
+  caracteres. Es texto libre sin más validación de formato — cuando está seteado, se muestra en
+  el header de cada nivel y en el título del PDF exportado desde Game Over.
 
 **HU-B01b — Validación de `avatarId` opcional (room:create y room:join)**
 > Como servidor, debo validar el `avatarId` que envía un participante al crear o unirse a una
@@ -324,6 +328,9 @@ antes de implementarlo, no directamente en el código.
   valor, se aplica el default de 5; valores dentro del rango se guardan tal cual.
 - Validación de `previousActionNotes` al crear sala: sin valor, se guarda `""`; con valor, se
   recorta (`.trim()`) y se guarda tal cual si no supera los 2000 caracteres; se rechaza con
+  `error:invalid_action` si los supera.
+- Validación de `teamName` al crear sala: sin valor, se guarda `""`; con valor, se recorta
+  (`.trim()`) y se guarda tal cual si no supera los 60 caracteres; se rechaza con
   `error:invalid_action` si los supera.
 - Lógica de `turn:set_speaker`/`turn:clear_speaker`: un evento de un socket que no es el host es
   rechazado con `error:unauthorized` y no modifica `currentSpeakerId`; el mismo evento del host

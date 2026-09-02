@@ -141,3 +141,9 @@ export const DEFAULT_STARS_PER_PARTICIPANT = 5;
 // anterior). Debe coincidir con PREVIOUS_ACTION_NOTES_MAX_LENGTH en
 // back/src/domain/room.js.
 export const PREVIOUS_ACTION_NOTES_MAX_LENGTH = 2000;
+
+// Nombre de equipo opcional que el host completa al crear la sala (ej:
+// "Jaliscom"). Se muestra en el header de cada nivel y en el título del PDF
+// exportado. Vacío por defecto — sin cambios visibles si no se completa.
+// Debe coincidir con TEAM_NAME_MAX_LENGTH en back/src/domain/room.js.
+export const TEAM_NAME_MAX_LENGTH = 60;

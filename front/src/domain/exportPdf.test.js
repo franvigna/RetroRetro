@@ -58,4 +58,19 @@ describe("generateActionPlanPdf", () => {
     const r = room({ participants: [] });
     expect(() => generateActionPlanPdf(r)).not.toThrow();
   });
+
+  it("agrega el título del equipo cuando la sala tiene teamName, sin romper el layout", () => {
+    const r = room({ teamName: "Jaliscom" });
+    // Igual que con los responsables (ver test de arriba), jsPDF no expone el
+    // texto renderizado para inspeccionar directamente — se ejercita que no
+    // lanza y que el documento sigue siendo válido con el bloque extra.
+    expect(() => generateActionPlanPdf(r)).not.toThrow();
+    expect(generateActionPlanPdf(r).getNumberOfPages()).toBe(1);
+  });
+
+  it("no agrega nada distinto si la sala no tiene teamName (comportamiento por defecto)", () => {
+    const r = room();
+    expect(r.teamName).toBeUndefined();
+    expect(() => generateActionPlanPdf(r)).not.toThrow();
+  });
 });

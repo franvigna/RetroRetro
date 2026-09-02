@@ -17,6 +17,12 @@ const MAX_SECONDS_PER_SPEAKER = 300;
 // manual de darle continuidad sin guardar nada entre salas distintas.
 export const PREVIOUS_ACTION_NOTES_MAX_LENGTH = 2000;
 
+// Nombre de equipo opcional que el host completa al crear la sala, para
+// identificar de qué equipo es esa retro puntual (ej: "Jaliscom"). Se
+// muestra en el header de cada nivel y en el título del PDF exportado. Vacío
+// por defecto — la app se ve exactamente igual que sin esta feature.
+export const TEAM_NAME_MAX_LENGTH = 60;
+
 // Espejo de front/src/domain/avatars.js. Generados con la herramienta
 // interna Avatar Lab (front/src/pages/AvatarLabPage.jsx) a partir de fotos
 // reales del equipo Jaliscom. Al sumar uno nuevo, agregar el mismo id acá y
@@ -78,6 +84,15 @@ export function resolvePreviousActionNotes(value) {
   return trimmed;
 }
 
+export function resolveTeamName(value) {
+  if (value === undefined || value === null) return "";
+  const trimmed = String(value).trim();
+  if (trimmed.length > TEAM_NAME_MAX_LENGTH) {
+    throw new InvalidActionError("room:create", `teamName no puede superar los ${TEAM_NAME_MAX_LENGTH} caracteres`);
+  }
+  return trimmed;
+}
+
 export function createRoom({
   code,
   hostId,
@@ -87,6 +102,7 @@ export function createRoom({
   secondsPerSpeaker,
   avatarId,
   previousActionNotes,
+  teamName,
   now,
 }) {
   if (!hostName || !hostName.trim()) {
@@ -97,6 +113,7 @@ export function createRoom({
   const resolvedStars = resolveStarsPerParticipant(starsPerParticipant);
   const resolvedSecondsPerSpeaker = resolveSecondsPerSpeaker(secondsPerSpeaker);
   const resolvedPreviousActionNotes = resolvePreviousActionNotes(previousActionNotes);
+  const resolvedTeamName = resolveTeamName(teamName);
 
   return {
     code,
@@ -121,6 +138,7 @@ export function createRoom({
     secondsPerSpeaker: resolvedSecondsPerSpeaker,
     speakerTimer: null,
     previousActionNotes: resolvedPreviousActionNotes,
+    teamName: resolvedTeamName,
     // Estado efímero de los tildes del Nivel 2 (ver domain/previousAction.js)
     // — { [índice de línea]: boolean }. Igual que el resto de la sala, no
     // persiste entre sesiones.

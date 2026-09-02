@@ -82,6 +82,7 @@ export function ActivePhasePage() {
     <div className="page page-wide">
       <div className="btn-row" style={{ width: "100%", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
+          {room.teamName && <p className="team-name-tag pixel-text">EQUIPO {room.teamName.toUpperCase()}</p>}
           <h1 className="brand-title pixel-text">{theme.title}</h1>
           <p className="brand-tagline">{theme.subtitle}</p>
         </div>

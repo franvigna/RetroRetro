@@ -72,6 +72,14 @@ export function generateActionPlanPdf(room, { now = new Date() } = {}) {
 
   let y = STRIPE_HEIGHT + 38;
 
+  if (room.teamName) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...ARCADE_COLORS.textDim);
+    doc.text(`Retro del equipo "${room.teamName}"`, MARGIN_X, y);
+    y += 20;
+  }
+
   // Cabecera de tablero: el documento debe leerse primero como un plan de
   // acción y no como una captura de la pantalla de cierre.
   doc.setFillColor(...ARCADE_COLORS.panel);

@@ -302,3 +302,15 @@ describe("ActivePhasePage — previous_action (Nivel 2)", () => {
     expect(screen.getByText(/no cargó ningún pendiente/)).toBeInTheDocument();
   });
 });
+
+describe("ActivePhasePage — nombre de equipo opcional en el header", () => {
+  it("muestra el nombre de equipo cuando la sala lo tiene", () => {
+    renderRoom("host-1", baseRoom({ teamName: "Jaliscom" }));
+    expect(screen.getByText("EQUIPO JALISCOM")).toBeInTheDocument();
+  });
+
+  it("no muestra nada si la sala no tiene nombre de equipo", () => {
+    renderRoom("host-1", baseRoom({ teamName: "" }));
+    expect(screen.queryByText(/^EQUIPO /)).not.toBeInTheDocument();
+  });
+});
